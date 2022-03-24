@@ -1,8 +1,10 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 func ping(c *gin.Context) {
@@ -16,6 +18,16 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
+	// Set default config values
+	viper.SetDefault("server_url", "localhost:8080")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	// Read config file
+	viper.ReadInConfig()
+	// Enable reading config from environment variables
+	viper.AutomaticEnv()
+
 	router := setupRouter()
-	router.Run("localhost:8080")
+	router.Run(viper.GetString("server_url"))
 }
