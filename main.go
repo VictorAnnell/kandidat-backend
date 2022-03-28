@@ -1,10 +1,12 @@
 package main
 
 import (
+	// "log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 func ping(c *gin.Context) {
@@ -18,16 +20,9 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	// Set default config values
-	viper.SetDefault("server_url", "localhost:8080")
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	// Read config file
-	viper.ReadInConfig()
-	// Enable reading config from environment variables
-	viper.AutomaticEnv()
+	// Load environment variables from .env file
+	godotenv.Load()
 
 	router := setupRouter()
-	router.Run(viper.GetString("server_url"))
+	router.Run(os.Getenv("SERVER_URL"))
 }
