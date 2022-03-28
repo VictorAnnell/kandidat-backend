@@ -8,11 +8,11 @@ services:
       - "postgres-data:/var/lib/postgresql/data:delegated"
       - "./db:/docker-entrypoint-initdb.d"
     ports:
-      - "${DATABASE_HOST}:${DATABASE_PORT}:5432"
+      - "${DATABASE_HOST:-127.0.0.1}:${DATABASE_PORT:-5432}:5432"
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-backend-db}
+      - POSTGRES_USER=${POSTGRES_USER:-dbuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
 
   adminer:
     image: adminer
