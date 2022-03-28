@@ -1,0 +1,25 @@
+version: '3.1'
+services:
+  db:
+    image: postgres
+    container_name: kandidat.db
+    restart: unless-stopped
+    volumes:
+      - "postgres-data:/var/lib/postgresql/data:delegated"
+      - "./db:/docker-entrypoint-initdb.d"
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=kandidat-backend
+
+  adminer:
+    image: adminer
+    container_name: kandidat.adminer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  postgres-data:
+    driver: local
+
