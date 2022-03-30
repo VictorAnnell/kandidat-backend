@@ -32,7 +32,7 @@ cd kandidat-backend
 3. Use the following commands to manage the docker containers:
 
 Create and start all containers defined in the local docker-compose.yml file in the background:
-```shell
+```
 docker-compose up -d
 ```
 
@@ -42,13 +42,13 @@ docker-compose ps
 ```
 
 Stop and remove all containers and volumes in the current project:  
-```shell
+```
 docker-compose down -v
 ```
-> Note: The above command followed by a subsequent `docker-compose up -d` needs to be done every time you want the database to be recreated using the definitions in [db/init.sql](db/init.sql)
+> Note: The above command followed by a subsequent `docker-compose up -d` needs to be done every time you want the database to be recreated using the definitions in [db/init.sql](db/init.sql).
 
 Print the logs of the containers in the current project:
-```shell
+```
 docker-compose logs
 ```
 
@@ -73,34 +73,34 @@ go run main.go
 ```
 
 Run tests:
-```shell
+```
 go test
 ```
 
 Build executable:
-```shell
+```
 go build
 ```
 
 > Note: The actions mentioned below should be performed before a commit/pull request.
 
 Reformat source code:
-```shell
+```
 go fmt
 ```
 
 Verify dependencies:
-```shell
+```
 go mod verify
 ```
 
 Report likely mistakes in packages:
-```shell
+```
 go vet
 ```
 
 Add missing and remove unused modules:
-```shell
+```
 go mod tidy
 ```
 
