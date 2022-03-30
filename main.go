@@ -34,7 +34,7 @@ func setupConfig() {
 		server_host = "localhost"
 	}
 	if server_port == "" {
-		server_port = "8081"
+		server_port = "8080"
 	}
 	if database_host == "" {
 		database_host = "localhost"
