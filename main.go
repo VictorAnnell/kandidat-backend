@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -83,7 +84,8 @@ func setupRouter() *gin.Engine {
 	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.Default()
 	router.GET("/ping", ping)
-
+	router.GET("/communities", getNewCommunities)
+	router.GET("/communityname", getCommunityName)
 	return router
 }
 
@@ -113,4 +115,28 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func getNewCommunities(c *gin.Context) {
+	user_id := 3 // TEST
+	var result int
+	query := "SELECT fk_community_id FROM usercommunitylink WHERE fk_user_id != $1"
+	err := dbPool.QueryRow(c, query, user_id).Scan(&result)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func getCommunityName(c *gin.Context) {
+	community_id := 1 //TEST
+	var result string
+	query := "SELECT name FROM Community WHERE community_id = $1"
+	err := dbPool.QueryRow(c, query, community_id).Scan(&result)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	c.JSON(http.StatusOK, result)
 }
