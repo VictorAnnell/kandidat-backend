@@ -1,6 +1,6 @@
 CREATE TABLE Users(
-	user_id SERIAL PRIMARY KEY,
-	name VARCHAR,
+    user_id SERIAL PRIMARY KEY,
+    name VARCHAR,
     phone_nr INT,
     address VARCHAR
 
@@ -18,7 +18,8 @@ CREATE TABLE Product (
 
 CREATE TABLE Review (
     review_id SERIAL PRIMARY KEY,
-    nr_of_stars INT,
+    rating INT,
+    content VARCHAR,
     fk_user_id INT REFERENCES Users(user_id),
     fk_product_id INT REFERENCES Product(product_id)
 );

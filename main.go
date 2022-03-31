@@ -18,6 +18,36 @@ var (
 	databaseURL string
 )
 
+type Community struct {
+	communityID int
+	name        string
+}
+
+type User struct {
+	userID int
+	name string
+	phoneNumber int
+	address string
+}
+
+type Review struct {
+	reviewID int
+	userID int
+	productID int
+	rating int
+	content string
+}
+
+type Product struct {
+	ProductID int
+	Name string
+	service bool
+	price int
+	uploadDate string
+	description string
+	userID int
+}
+
 func setupConfig() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
@@ -82,9 +112,15 @@ func ping(c *gin.Context) {
 
 func setupRouter() *gin.Engine {
 	gin.SetMode(os.Getenv("GIN_MODE"))
-	router := gin.Default()
+	router := gin.New()
+	// Log to stdout.
+	gin.DefaultWriter = os.Stdout
+	router.Use(gin.Logger())
+	// Recovery middleware recovers from any panics and writes a 500 if there was one.
+	router.Use(gin.Recovery())
+
 	router.GET("/ping", ping)
-	router.GET("/communities", getNewCommunities)
+	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
 	return router
 }
@@ -115,6 +151,30 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func getCommunities(c *gin.Context) {
+	query := "SELECT * FROM Community"
+	rows, err := dbPool.Query(c, query)
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	var communities []Community
+	for rows.Next() {
+		var community Community
+		err := rows.Scan(&community.CommunityID, &community.Name)
+		if err != nil {
+			panic(err)
+		}
+		communities = append(communities, community)
+	}
+
+	c.JSON(http.StatusOK, communities)
+
+
 }
 
 func getNewCommunities(c *gin.Context) {
