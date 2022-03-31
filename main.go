@@ -19,7 +19,10 @@ var (
 
 func setupConfig() {
 	// Load environment variables from .env file
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	serverHost := os.Getenv("SERVER_HOST")
 	serverPort := os.Getenv("SERVER_PORT")
@@ -33,21 +36,27 @@ func setupConfig() {
 	if serverHost == "" {
 		serverHost = "localhost"
 	}
+
 	if serverPort == "" {
 		serverPort = "8080"
 	}
+
 	if databaseHost == "" {
 		databaseHost = "localhost"
 	}
+
 	if databasePort == "" {
 		databasePort = "5432"
 	}
+
 	if databaseName == "" {
 		databaseName = "backend-db"
 	}
+
 	if databaseUser == "" {
 		databaseUser = "dbuser"
 	}
+
 	if databasePassword == "" {
 		databasePassword = "kandidat-backend"
 	}
@@ -62,6 +71,7 @@ func setupDBPool() *pgxpool.Pool {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
+
 	return dbpool
 }
 
@@ -73,12 +83,14 @@ func setupRouter() *gin.Engine {
 	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.Default()
 	router.GET("/ping", ping)
+
 	return router
 }
 
 func testDB() {
 	var greeting string
 	err := dbPool.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 		os.Exit(1)
@@ -89,11 +101,16 @@ func testDB() {
 
 func main() {
 	setupConfig()
+
 	dbPool = setupDBPool()
 	defer dbPool.Close()
 
 	testDB()
 
 	router := setupRouter()
-	router.Run(serverURL)
+	err := router.Run(serverURL)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
