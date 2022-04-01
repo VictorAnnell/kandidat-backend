@@ -30,19 +30,16 @@ CREATE TABLE Community (
     name VARCHAR 
 );
 
-CREATE TABLE UserCommunityLink (
-    user_community_link_id SERIAL PRIMARY KEY,
+CREATE TABLE User_Community (
+    -- user_community_link_id SERIAL PRIMARY KEY,
     fk_user_id INT REFERENCES Users(user_id),
     fk_community_id INT REFERENCES Community(community_id) 
 );
-
-
-    
 
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor');
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 
-INSERT INTO UserCommunityLink(fk_user_id, fk_community_id) VALUES (
+INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
     (SELECT user_id from Users where name='Gustav'),
     (SELECT community_id from Community where name='Memes'));

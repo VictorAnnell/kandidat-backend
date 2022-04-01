@@ -64,7 +64,8 @@ Along with setting up a local instance of PostgresSQL the provided [docker-compo
 While the containers are running the web interface can be accessed in a browser at the address [`localhost:8081`](http://localhost:8081). There you can use the following credentials to login:
 
 ```
-Server: db
+System:   PostgreSQL
+Server:   db
 Username: dbuser
 Password: kandidat-backend
 Database: backend-db
