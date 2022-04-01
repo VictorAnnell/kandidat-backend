@@ -19,33 +19,33 @@ var (
 )
 
 type Community struct {
-	communityID int
-	name        string
+	CommunityID int
+	Name        string
 }
 
 type User struct {
-	userID int
-	name string
-	phoneNumber int
-	address string
+	UserID int
+	Name string
+	PhoneNumber int
+	Address string
 }
 
 type Review struct {
-	reviewID int
-	userID int
-	productID int
-	rating int
-	content string
+	ReviewID int
+	UserID int
+	ProductID int
+	Rating int
+	Content string
 }
 
 type Product struct {
 	ProductID int
 	Name string
-	service bool
-	price int
-	uploadDate string
-	description string
-	userID int
+	Service bool
+	Price int
+	UploadDate string
+	Description string
+	UserID int
 }
 
 func setupConfig() {
@@ -122,6 +122,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
+    router.GET("/user/:userid/communities", getUsersCommunities)
 	return router
 }
 
@@ -173,10 +174,40 @@ func getCommunities(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, communities)
-
-
 }
 
+func getUsersCommunities(c *gin.Context) {
+    user := c.Param("userid")
+    query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM usercommunitylink WHERE fk_user_id = $1)"
+    rows, err := dbPool.Query(c, query, user)
+	if err != nil {
+		panic(err)
+	}
+
+    defer rows.Close()
+
+	var communities []Community
+	for rows.Next() {
+		var community Community
+		err := rows.Scan(&community.CommunityID, &community.Name)
+		if err != nil {
+			panic(err)
+		}
+		communities = append(communities, community)
+	}
+
+	c.JSON(http.StatusOK, communities)
+}
+
+    
+
+
+
+
+
+
+
+//Useless?
 func getNewCommunities(c *gin.Context) {
 	user_id := 3 // TEST
 	var result int
