@@ -177,9 +177,9 @@ func getCommunities(c *gin.Context) {
 }
 
 func getUsersCommunities(c *gin.Context) {
-    user := c.Param("userid")
-    query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM usercommunitylink WHERE fk_user_id = $1)"
-    rows, err := dbPool.Query(c, query, user)
+	user := c.Param("userid")
+	query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
 	}
@@ -211,7 +211,7 @@ func getUsersCommunities(c *gin.Context) {
 func getNewCommunities(c *gin.Context) {
 	user_id := 3 // TEST
 	var result int
-	query := "SELECT fk_community_id FROM usercommunitylink WHERE fk_user_id != $1"
+	query := "SELECT fk_community_id FROM User_Community WHERE fk_user_id != $1"
 	err := dbPool.QueryRow(c, query, user_id).Scan(&result)
 	if err != nil {
 		log.Fatal(err)
