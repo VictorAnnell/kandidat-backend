@@ -42,6 +42,10 @@ INSERT INTO Users (name, phone_nr, address) VALUES ('Rohat', 123, 'Flogstabrush'
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 
+INSERT INTO Product (name, service, price, upload_date, description, fk_user_id) VALUES ('Rosa soffa', False, 200, '2022-02-02', 
+'hej sötis', 1);
+
 INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
     (SELECT user_id from Users where name='Gustav'),
     (SELECT community_id from Community where name='Memes'));
+    

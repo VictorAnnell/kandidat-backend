@@ -124,6 +124,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/communityname", getCommunityName)
 	router.GET("/user/:userid/communities", getUsersCommunities)
 	router.GET("/user/:userid", getUser)
+	router.GET("/products/:productid", getProductID) 
 	return router
 }
 
@@ -208,7 +209,18 @@ func getUser(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	c.JSON(http.StatusOK, result)
+}
 
+func getProductID(c *gin.Context) {
+	var result Product 
+	productId := c.Param("productid")
+	query := "SELECT * FROM Product WHERE product_id = $1"
+	err := dbPool.QueryRow(c, query, productId).Scan(&result)
+	if err != nil{
+		log.Fatal(err)
+		os.Exit(1)
+	}
 	c.JSON(http.StatusOK, result)
 }
 
@@ -236,3 +248,4 @@ func getCommunityName(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, result)
 }
+
