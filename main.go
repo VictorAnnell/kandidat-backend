@@ -24,28 +24,28 @@ type Community struct {
 }
 
 type User struct {
-	UserID int
-	Name string
+	UserID      int
+	Name        string
 	PhoneNumber int
-	Address string
+	Address     string
 }
 
 type Review struct {
-	ReviewID int
-	UserID int
+	ReviewID  int
+	UserID    int
 	ProductID int
-	Rating int
-	Content string
+	Rating    int
+	Content   string
 }
 
 type Product struct {
-	ProductID int
-	Name string
-	Service bool
-	Price int
-	UploadDate string
+	ProductID   int
+	Name        string
+	Service     bool
+	Price       int
+	UploadDate  string
 	Description string
-	UserID int
+	UserID      int
 }
 
 func setupConfig() {
@@ -122,7 +122,8 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
-    router.GET("/user/:userid/communities", getUsersCommunities)
+	router.GET("/user/:userid/communities", getUsersCommunities)
+	router.GET("/user/:userid", getUser)
 	return router
 }
 
@@ -184,7 +185,7 @@ func getUsersCommunities(c *gin.Context) {
 		panic(err)
 	}
 
-    defer rows.Close()
+	defer rows.Close()
 
 	var communities []Community
 	for rows.Next() {
@@ -199,13 +200,17 @@ func getUsersCommunities(c *gin.Context) {
 	c.JSON(http.StatusOK, communities)
 }
 
-    
+func getUser(c *gin.Context) {
+	var result User
+	user := c.Param("userid")
+	query := "SELECT * from Users WHERE user_id = $1"
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-
-
-
-
-
+	c.JSON(http.StatusOK, result)
+}
 
 //Useless?
 func getNewCommunities(c *gin.Context) {

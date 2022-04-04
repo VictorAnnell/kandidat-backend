@@ -38,6 +38,8 @@ CREATE TABLE User_Community (
 
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor');
 
+INSERT INTO Users (name, phone_nr, address) VALUES ('Rohat', 123, 'Flogstabrush');
+
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 
 INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
