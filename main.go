@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -124,7 +125,8 @@ func setupRouter() *gin.Engine {
 	router.GET("/communityname", getCommunityName)
 	router.GET("/user/:userid/communities", getUsersCommunities)
 	router.GET("/user/:userid", getUser)
-	router.GET("/products/:productid", getProductID) 
+	router.GET("/products/:productid", getProductID)
+	router.POST("/users", createUser)
 	return router
 }
 
@@ -213,11 +215,11 @@ func getUser(c *gin.Context) {
 }
 
 func getProductID(c *gin.Context) {
-	var result Product 
+	var result Product
 	productId := c.Param("productid")
 	query := "SELECT * FROM Product WHERE product_id = $1"
 	err := dbPool.QueryRow(c, query, productId).Scan(&result)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
@@ -249,3 +251,16 @@ func getCommunityName(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+func createUser(c *gin.Context) {
+	name := c.PostForm("n")
+	address := c.PostForm("a")
+	phone_nr, _ := strconv.Atoi(c.PostForm("p"))
+
+	query := "INSERT INTO Users(name, phone_nr, address) VALUES($1,$2, $3)"
+	_, err := dbPool.Exec(c, query, name, phone_nr, address)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Status(http.StatusOK)
+}
