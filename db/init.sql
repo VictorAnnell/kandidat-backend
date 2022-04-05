@@ -2,8 +2,8 @@ CREATE TABLE Users(
     user_id SERIAL PRIMARY KEY,
     name VARCHAR,
     phone_nr INT,
-    address VARCHAR
-
+    address VARCHAR,
+    password VARCHAR
 );
 
 CREATE TABLE Product (

@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -29,6 +30,7 @@ type User struct {
 	Name        string
 	PhoneNumber int
 	Address     string
+	Password    []byte
 }
 
 type Review struct {
@@ -207,7 +209,7 @@ func getUser(c *gin.Context) {
 	var result User
 	user := c.Param("userid")
 	query := "SELECT * from Users WHERE user_id = $1"
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address)
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -255,12 +257,20 @@ func createUser(c *gin.Context) {
 	name := c.PostForm("n")
 	address := c.PostForm("a")
 	phone_nr, _ := strconv.Atoi(c.PostForm("p"))
+	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), 14)
 
-	query := "INSERT INTO Users(name, phone_nr, address) VALUES($1,$2, $3)"
-	_, err := dbPool.Exec(c, query, name, phone_nr, address)
+	user := User{
+		Name:        name,
+		Address:     address,
+		PhoneNumber: phone_nr,
+		Password:    password,
+	}
+
+	query := "INSERT INTO Users(name, phone_nr, address, password) VALUES($1,$2, $3, $4)"
+	_, err := dbPool.Exec(c, query, name, phone_nr, address, password)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, user)
 }
