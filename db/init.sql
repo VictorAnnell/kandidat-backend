@@ -2,7 +2,8 @@ CREATE TABLE Users(
     user_id SERIAL PRIMARY KEY,
     name VARCHAR,
     phone_nr INT,
-    address VARCHAR
+    address VARCHAR,
+    img bytea
 
 );
 
@@ -39,6 +40,8 @@ CREATE TABLE User_Community (
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor');
 
 INSERT INTO Users (name, phone_nr, address) VALUES ('Rohat', 123, 'Flogstabrush');
+
+INSERT INTO Users (name, phone_nr, address, img) VALUES ('Victor Kill', 123, 'Flogstabrush', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea);
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 
