@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -121,9 +120,9 @@ func setupRouter() *gin.Engine {
 
 	router.GET("/ping", ping)
 	router.GET("/communities", getCommunities)
-	router.GET("/communityname", getCommunityName)
-	router.GET("/user/:userid/communities", getUsersCommunities)
-	router.GET("/user/:userid", getUser)
+	router.GET("/users/:userid/communities", getUserCommunities)
+	router.GET("/users/:userid", getUser)
+	router.GET("users/:userid/followers", getUserFollowers)
 	return router
 }
 
@@ -177,9 +176,16 @@ func getCommunities(c *gin.Context) {
 	c.JSON(http.StatusOK, communities)
 }
 
-func getUsersCommunities(c *gin.Context) {
+func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
-	query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	joined := c.DefaultQuery("joined", "true")
+	var query string
+	if joined == "false" {
+		query = "SELECT * from Community WHERE community_id != (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	} else {
+		query = "SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	}
+
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
@@ -212,27 +218,25 @@ func getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-//Useless?
-func getNewCommunities(c *gin.Context) {
-	user_id := 3 // TEST
-	var result int
-	query := "SELECT fk_community_id FROM User_Community WHERE fk_user_id != $1"
-	err := dbPool.QueryRow(c, query, user_id).Scan(&result)
+func getUserFollowers(c *gin.Context) {
+	user := c.Param("userid")
+	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
+	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		panic(err)
 	}
-	c.JSON(http.StatusOK, result)
-}
 
-func getCommunityName(c *gin.Context) {
-	community_id := 1 //TEST
-	var result string
-	query := "SELECT name FROM Community WHERE community_id = $1"
-	err := dbPool.QueryRow(c, query, community_id).Scan(&result)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+	defer rows.Close()
+
+	var followers []User
+	for rows.Next() {
+		var follower User
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Address)
+		if err != nil {
+			panic(err)
+		}
+		followers = append(followers, follower)
 	}
-	c.JSON(http.StatusOK, result)
+
+	c.JSON(http.StatusOK, followers)
 }
