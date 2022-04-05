@@ -8,11 +8,17 @@ import (
 	"os"
 	"strconv"
 
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// Create the JWT key used to create the signature
+var jwtKey = []byte("my_secret_key")
 
 var (
 	dbPool      *pgxpool.Pool
@@ -129,6 +135,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/user/:userid", getUser)
 	router.GET("/products/:productid", getProductID)
 	router.POST("/users", createUser)
+	router.POST("/login", login)
 	return router
 }
 
@@ -254,9 +261,9 @@ func getCommunityName(c *gin.Context) {
 }
 
 func createUser(c *gin.Context) {
-	name := c.PostForm("n")
-	address := c.PostForm("a")
-	phone_nr, _ := strconv.Atoi(c.PostForm("p"))
+	name := c.PostForm("name")
+	address := c.PostForm("address")
+	phone_nr, _ := strconv.Atoi(c.PostForm("phone"))
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), 14)
 
 	user := User{
@@ -273,4 +280,31 @@ func createUser(c *gin.Context) {
 		log.Fatal(err)
 	}
 	c.JSON(http.StatusOK, user)
+}
+
+func login(c *gin.Context) {
+	var result []byte
+	phone_nr, _ := strconv.Atoi(c.PostForm("phone")) // TODO: Not login with phone_nr maybe??
+	password := []byte(c.PostForm("password"))
+	query := "SELECT password FROM Users where phone_nr = $1"
+	err := dbPool.QueryRow(c, query, phone_nr).Scan(&result)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	err = bcrypt.CompareHashAndPassword(result, password)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+
+	c.JSON(http.StatusOK, tokenString)
+
 }
