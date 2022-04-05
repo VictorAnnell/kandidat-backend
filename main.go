@@ -110,7 +110,6 @@ func ping(c *gin.Context) {
 }
 
 func setupRouter() *gin.Engine {
-	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.New()
 	// Log to stdout.
 	gin.DefaultWriter = os.Stdout
