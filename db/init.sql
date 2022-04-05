@@ -6,6 +6,12 @@ CREATE TABLE Users(
     password VARCHAR
 );
 
+CREATE TABLE User_Followers(
+    user_follower_id SERIAL PRIMARY KEY,
+    fk_user_id INT REFERENCES Users(user_id),
+    fk_follower_id INT REFERENCES Users(user_id)
+);
+
 CREATE TABLE Product (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR,
@@ -31,7 +37,7 @@ CREATE TABLE Community (
 );
 
 CREATE TABLE User_Community (
-    -- user_community_link_id SERIAL PRIMARY KEY,
+    user_community_id SERIAL PRIMARY KEY,
     fk_user_id INT REFERENCES Users(user_id),
     fk_community_id INT REFERENCES Community(community_id) 
 );
@@ -48,4 +54,5 @@ INSERT INTO Product (name, service, price, upload_date, description, fk_user_id)
 INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
     (SELECT user_id from Users where name='Gustav'),
     (SELECT community_id from Community where name='Memes'));
-    
+
+INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES (1, 3);

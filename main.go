@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -120,7 +119,6 @@ func ping(c *gin.Context) {
 }
 
 func setupRouter() *gin.Engine {
-	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.New()
 	// Log to stdout.
 	gin.DefaultWriter = os.Stdout
@@ -130,9 +128,9 @@ func setupRouter() *gin.Engine {
 
 	router.GET("/ping", ping)
 	router.GET("/communities", getCommunities)
-	router.GET("/communityname", getCommunityName)
-	router.GET("/user/:userid/communities", getUsersCommunities)
-	router.GET("/user/:userid", getUser)
+	router.GET("/users/:userid", getUser)
+	router.GET("/users/:userid/communities", getUserCommunities)
+	router.GET("users/:userid/followers", getUserFollowers)
 	router.GET("/products/:productid", getProductID)
 	router.POST("/users", createUser)
 	router.POST("/login", login)
@@ -189,9 +187,16 @@ func getCommunities(c *gin.Context) {
 	c.JSON(http.StatusOK, communities)
 }
 
-func getUsersCommunities(c *gin.Context) {
+func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
-	query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	joined := c.DefaultQuery("joined", "true")
+	var query string
+	if joined == "false" {
+		query = "SELECT * from Community WHERE community_id != (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	} else {
+		query = "SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	}
+
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
@@ -229,35 +234,33 @@ func getProductID(c *gin.Context) {
 	query := "SELECT * FROM Product WHERE product_id = $1"
 	err := dbPool.QueryRow(c, query, productId).Scan(&result)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	c.JSON(http.StatusOK, result)
 }
 
-//Useless?
-func getNewCommunities(c *gin.Context) {
-	user_id := 3 // TEST
-	var result int
-	query := "SELECT fk_community_id FROM User_Community WHERE fk_user_id != $1"
-	err := dbPool.QueryRow(c, query, user_id).Scan(&result)
+func getUserFollowers(c *gin.Context) {
+	user := c.Param("userid")
+	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
+	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		panic(err)
 	}
-	c.JSON(http.StatusOK, result)
-}
 
-func getCommunityName(c *gin.Context) {
-	community_id := 1 //TEST
-	var result string
-	query := "SELECT name FROM Community WHERE community_id = $1"
-	err := dbPool.QueryRow(c, query, community_id).Scan(&result)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+	defer rows.Close()
+
+	var followers []User
+	for rows.Next() {
+		var follower User
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Address)
+		if err != nil {
+			panic(err)
+		}
+		followers = append(followers, follower)
 	}
-	c.JSON(http.StatusOK, result)
+
+	c.JSON(http.StatusOK, followers)
 }
 
 func createUser(c *gin.Context) {
@@ -277,7 +280,7 @@ func createUser(c *gin.Context) {
 	_, err := dbPool.Exec(c, query, name, phone_nr, address, password)
 
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	c.JSON(http.StatusOK, user)
 }
@@ -289,13 +292,13 @@ func login(c *gin.Context) {
 	query := "SELECT password FROM Users where phone_nr = $1"
 	err := dbPool.QueryRow(c, query, phone_nr).Scan(&result)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	err = bcrypt.CompareHashAndPassword(result, password)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
