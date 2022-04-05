@@ -3,7 +3,8 @@ CREATE TABLE Users(
     name VARCHAR,
     phone_nr INT,
     address VARCHAR,
-    password VARCHAR
+    password VARCHAR,
+    img bytea
 );
 
 CREATE TABLE User_Followers(
@@ -45,6 +46,8 @@ CREATE TABLE User_Community (
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor');
 
 INSERT INTO Users (name, phone_nr, address) VALUES ('Rohat', 123, 'Flogstabrush');
+
+INSERT INTO Users (name, phone_nr, address, img) VALUES ('Victor Kill', 123, 'Flogstabrush', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea);
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 

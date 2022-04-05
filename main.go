@@ -36,6 +36,7 @@ type User struct {
 	PhoneNumber int
 	Address     string
 	Password    []byte
+	Picture     []byte
 }
 
 type Review struct {
@@ -220,8 +221,8 @@ func getUserCommunities(c *gin.Context) {
 func getUser(c *gin.Context) {
 	var result User
 	user := c.Param("userid")
-	query := "SELECT * from Users WHERE user_id = $1"
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password)
+	query := "SELECT user_id, name, phone_nr, address, password, encode(img, 'base64') from Users WHERE user_id = $1"
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password, &result.Picture)
 	if err != nil {
 		fmt.Println(err)
 	}
