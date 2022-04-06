@@ -41,7 +41,7 @@ type Review struct {
 type Product struct {
 	ProductID   int
 	Name        string
-	Service     bool
+	Service     int
 	Price       int
 	UploadDate  string
 	Description string
@@ -122,6 +122,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	router.GET("/reviews/:userid", getReviews)
 	router.POST("/reviews/add", createReview)
+	router.GET("user/:userid/products", getProducts)
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
@@ -158,6 +159,30 @@ func main() {
 	}
 }
 
+//Gives you all products that are owned by userId
+
+func getProducts(c *gin.Context) {
+	user := c.Param("userid")
+	query := "SELECT * from Product WHERE fk_user_id = $1"
+	rows, err := dbPool.Query(c, query, user)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var products []Product
+	for rows.Next() {
+		var product Product
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+		if err != nil {
+			panic(err)
+		}
+		products = append(products, product)
+	}
+	c.JSON(http.StatusOK, products)
+}
+
+//Adds a product to the userID
 type ProductRequestBody struct {
 	Name        string
 	Service     bool

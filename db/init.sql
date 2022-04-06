@@ -9,7 +9,7 @@ CREATE TABLE Users(
 CREATE TABLE Product (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR,
-    service BOOLEAN,
+    service INT,
     price INT,
     upload_date DATE,
     description VARCHAR,
@@ -25,8 +25,6 @@ CREATE TABLE Review (
 );
 
 
-
-
 CREATE TABLE Community (
     community_id SERIAL PRIMARY KEY,
     name VARCHAR 
@@ -40,7 +38,7 @@ CREATE TABLE User_Community (
 
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor'),('Kimiya'),('Aishe');
 
-INSERT INTO Product (name,fk_user_id ) VALUES ('Soffa',1),('Tröja',1);
+INSERT INTO Product (name,fk_user_id, service) VALUES ('Soffa',1,1),('Tröja',1,2);
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 
