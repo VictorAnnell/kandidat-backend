@@ -3,15 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
+	"strconv"
+
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// Create the JWT key used to create the signature
+var jwtKey = []byte("my_secret_key")
 
 var (
 	dbPool      *pgxpool.Pool
@@ -19,18 +26,23 @@ var (
 	databaseURL string
 )
 
+// Community struct for the database table Community.
 type Community struct {
 	CommunityID int
 	Name        string
 }
 
+// User struct for the database table User.
 type User struct {
 	UserID      int
 	Name        string
-	PhoneNumber int
-	Address     string
+	PhoneNumber string
+	Password    []byte
+	Picture     []byte
 }
 
+// nolint:deadcode // to be implemented
+// Review struct for the database table Review.
 type Review struct {
 	ReviewID   int
 	Rating     int
@@ -39,6 +51,7 @@ type Review struct {
 	ProductID  int
 }
 
+// Procut struct for the database table Product.
 type Product struct {
 	ProductID   int
 	Name        string
@@ -49,6 +62,7 @@ type Product struct {
 	UserID      int
 }
 
+// setupConfig reads in .env file and ENV variables if set, otherwise use default values.
 func setupConfig() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
@@ -97,6 +111,7 @@ func setupConfig() {
 	databaseURL = "postgres://" + databaseUser + ":" + databasePassword + "@" + databaseHost + ":" + databasePort + "/" + databaseName
 }
 
+// setupDBPool creates a connection pool to the database.
 func setupDBPool() *pgxpool.Pool {
 	dbpool, err := pgxpool.Connect(context.Background(), databaseURL)
 	if err != nil {
@@ -107,12 +122,13 @@ func setupDBPool() *pgxpool.Pool {
 	return dbpool
 }
 
+// ping returns a simple string to test the server is running.
 func ping(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
 }
 
+// setupRouter creates a router with all the routes.
 func setupRouter() *gin.Engine {
-	gin.SetMode(os.Getenv("GIN_MODE"))
 	router := gin.New()
 	// Log to stdout.
 	gin.DefaultWriter = os.Stdout
@@ -126,12 +142,17 @@ func setupRouter() *gin.Engine {
 	router.GET("user/:userid/products", getProducts)
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
-	router.GET("/communityname", getCommunityName)
-	router.GET("/user/:userid/communities", getUsersCommunities)
+	router.GET("/users/:userid", getUser)
+	router.GET("/users/:userid/communities", getUserCommunities)
+	router.GET("users/:userid/followers", getUserFollowers)
+	router.GET("/products/:productid", getProductID)
+	router.POST("/users", createUser)
+	router.POST("/login", login)
 
 	return router
 }
 
+// testDB tests the database connection.
 func testDB() {
 	var greeting string
 	err := dbPool.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
@@ -142,22 +163,6 @@ func testDB() {
 	}
 
 	fmt.Println(greeting)
-}
-
-func main() {
-	setupConfig()
-
-	dbPool = setupDBPool()
-	defer dbPool.Close()
-
-	testDB()
-
-	router := setupRouter()
-	err := router.Run(serverURL)
-
-	if err != nil {
-		fmt.Println(err)
-	}
 }
 
 //Gives you all products that are owned by userId
@@ -261,6 +266,7 @@ func getReviews(c *gin.Context) {
 func getCommunities(c *gin.Context) {
 	query := "SELECT * FROM Community"
 	rows, err := dbPool.Query(c, query)
+
 	if err != nil {
 		panic(err)
 	}
@@ -268,21 +274,33 @@ func getCommunities(c *gin.Context) {
 	defer rows.Close()
 
 	var communities []Community
+
 	for rows.Next() {
 		var community Community
+
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
 			panic(err)
 		}
+
 		communities = append(communities, community)
 	}
 
 	c.JSON(http.StatusOK, communities)
 }
 
-func getUsersCommunities(c *gin.Context) {
+// getUserCommunities returns all communities the user is in.
+func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
-	query := "SELECT * from Community WHERE community_id = (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	joined := c.DefaultQuery("joined", "true")
+
+	var query string
+	if joined == "false" {
+		query = "SELECT * from Community WHERE community_id != (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	} else {
+		query = "SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+	}
+
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
@@ -291,39 +309,147 @@ func getUsersCommunities(c *gin.Context) {
 	defer rows.Close()
 
 	var communities []Community
+
 	for rows.Next() {
 		var community Community
+
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
 			panic(err)
 		}
+
 		communities = append(communities, community)
 	}
 
 	c.JSON(http.StatusOK, communities)
 }
 
-//Useless?
-func getNewCommunities(c *gin.Context) {
-	user_id := 3 // TEST
-	var result int
-	query := "SELECT fk_community_id FROM User_Community WHERE fk_user_id != $1"
-	err := dbPool.QueryRow(c, query, user_id).Scan(&result)
+// getUser returns the user with the given id.
+func getUser(c *gin.Context) {
+	var result User
+
+	user := c.Param("userid")
+	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64') from Users WHERE user_id = $1"
+
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		fmt.Println(err)
 	}
+
 	c.JSON(http.StatusOK, result)
 }
 
-func getCommunityName(c *gin.Context) {
-	community_id := 1 //TEST
-	var result string
-	query := "SELECT name FROM Community WHERE community_id = $1"
-	err := dbPool.QueryRow(c, query, community_id).Scan(&result)
+// getProductID returns the product with the given id.
+func getProductID(c *gin.Context) {
+	var result Product
+
+	productID := c.Param("productid")
+	query := "SELECT * FROM Product WHERE product_id = $1"
+
+	err := dbPool.QueryRow(c, query, productID).Scan(&result)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	c.JSON(http.StatusOK, result)
+}
+
+// getUserFollowers returns all users that follow the user with the given id.
+func getUserFollowers(c *gin.Context) {
+	user := c.Param("userid")
+	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
+
+	rows, err := dbPool.Query(c, query, user)
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	var followers []User
+
+	for rows.Next() {
+		var follower User
+
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture)
+		if err != nil {
+			panic(err)
+		}
+
+		followers = append(followers, follower)
+	}
+
+	c.JSON(http.StatusOK, followers)
+}
+
+// createUser creates a new user.
+func createUser(c *gin.Context) {
+	name := c.PostForm("name")
+	phoneNr := c.PostForm("phone")
+	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
+
+	user := User{
+		Name:        name,
+		PhoneNumber: phoneNr,
+		Password:    password,
+	}
+
+	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
+	_, err := dbPool.Exec(c, query, name, phoneNr, password)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+// login logs in the user with the given credentials.
+func login(c *gin.Context) {
+	var result []byte
+
+	phoneNr, _ := strconv.Atoi(c.PostForm("phone")) // TODO: Not login with phone_nr maybe??
+	password := []byte(c.PostForm("password"))
+	query := "SELECT password FROM Users where phone_nr = $1"
+
+	err := dbPool.QueryRow(c, query, phoneNr).Scan(&result)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	err = bcrypt.CompareHashAndPassword(result, password)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c.JSON(http.StatusOK, tokenString)
+}
+
+// main is the entry point for the application.
+func main() {
+	setupConfig()
+
+	dbPool = setupDBPool()
+	defer dbPool.Close()
+
+	testDB()
+
+	router := setupRouter()
+	err := router.Run(serverURL)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
