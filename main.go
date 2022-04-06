@@ -41,7 +41,6 @@ type User struct {
 	Picture     []byte
 }
 
-// nolint:deadcode // to be implemented
 // Review struct for the database table Review.
 type Review struct {
 	ReviewID   int
@@ -165,30 +164,34 @@ func testDB() {
 	fmt.Println(greeting)
 }
 
-//Gives you all products that are owned by userId
+// Gives you all products that are owned by userId
 
 func getProducts(c *gin.Context) {
 	user := c.Param("userid")
 	query := "SELECT * from Product WHERE fk_user_id = $1"
 	rows, err := dbPool.Query(c, query, user)
+
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
 	var products []Product
+
 	for rows.Next() {
 		var product Product
 		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+
 		if err != nil {
 			panic(err)
 		}
+
 		products = append(products, product)
 	}
 	c.JSON(http.StatusOK, products)
 }
 
-//Adds a product to the userID
+// Adds a product to the userID
 type ProductRequestBody struct {
 	Name        string
 	Service     bool
@@ -199,7 +202,6 @@ type ProductRequestBody struct {
 }
 
 func createProduct(c *gin.Context) {
-
 	var requestBody ProductRequestBody
 
 	if err := c.BindJSON(&requestBody); err != nil {
@@ -226,12 +228,12 @@ type ReviewRequestBody struct {
 }
 
 func createReview(c *gin.Context) {
-
 	var requestBody ReviewRequestBody
 
 	if err := c.BindJSON(&requestBody); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
+
 	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_product_id) VALUES($1,$2, $3, $4)"
 	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.ProductID)
 
@@ -246,18 +248,22 @@ func getReviews(c *gin.Context) {
 	user := c.Param("userid")
 	query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
 	rows, err := dbPool.Query(c, query, user)
+
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
 	var reviews []Review
+
 	for rows.Next() {
 		var review Review
 		err := rows.Scan(&review.ReviewID, &review.Rating, &review.Content, &review.ReviewID, &review.ProductID)
+
 		if err != nil {
 			panic(err)
 		}
+
 		reviews = append(reviews, review)
 	}
 	c.JSON(http.StatusOK, reviews)
