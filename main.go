@@ -35,8 +35,7 @@ type Community struct {
 type User struct {
 	UserID      int
 	Name        string
-	PhoneNumber int
-	Address     string
+	PhoneNumber string 
 	Password    []byte
 	Picture     []byte
 }
@@ -228,9 +227,9 @@ func getUser(c *gin.Context) {
 	var result User
 
 	user := c.Param("userid")
-	query := "SELECT user_id, name, phone_nr, address, password, encode(img, 'base64') from Users WHERE user_id = $1"
+	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64') from Users WHERE user_id = $1"
 
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password, &result.Picture)
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -240,7 +239,7 @@ func getUser(c *gin.Context) {
 
 // getProductID returns the product with the given id.
 func getProductID(c *gin.Context) {
-	var result Product
+    var result Product
 
 	productID := c.Param("productid")
 	query := "SELECT * FROM Product WHERE product_id = $1"
@@ -271,7 +270,7 @@ func getUserFollowers(c *gin.Context) {
 	for rows.Next() {
 		var follower User
 
-		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Address)
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture)
 		if err != nil {
 			panic(err)
 		}
@@ -285,19 +284,17 @@ func getUserFollowers(c *gin.Context) {
 // createUser creates a new user.
 func createUser(c *gin.Context) {
 	name := c.PostForm("name")
-	address := c.PostForm("address")
-	phoneNr, _ := strconv.Atoi(c.PostForm("phone"))
+	phoneNr := c.PostForm("phone")
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
 	user := User{
 		Name:        name,
-		Address:     address,
 		PhoneNumber: phoneNr,
 		Password:    password,
 	}
 
-	query := "INSERT INTO Users(name, phone_nr, address, password) VALUES($1,$2, $3, $4)"
-	_, err := dbPool.Exec(c, query, name, phoneNr, address, password)
+	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
+	_, err := dbPool.Exec(c, query, name, phoneNr, password)
 
 	if err != nil {
 		fmt.Println(err)
