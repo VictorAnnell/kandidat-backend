@@ -38,7 +38,7 @@ CREATE TABLE User_Community (
 
 INSERT INTO Users (name) VALUES ('Gustav'), ('Victor'),('Kimiya'),('Aishe');
 
-INSERT INTO Product (name,fk_user_id, service) VALUES ('Soffa',1,1),('Tröja',1,2);
+INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa',1,1,'2022-04-07','Hej',1),('Soffa',1,2,'2022-04-07','Hej',1);
 
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 

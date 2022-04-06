@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -43,7 +44,7 @@ type Product struct {
 	Name        string
 	Service     int
 	Price       int
-	UploadDate  string
+	UploadDate  pgtype.Date
 	Description string
 	UserID      int
 }
