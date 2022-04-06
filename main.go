@@ -25,21 +25,23 @@ var (
 	databaseURL string
 )
 
+// Community struct for the database table Community.
 type Community struct {
 	CommunityID int
 	Name        string
 }
 
+// User struct for the database table User.
 type User struct {
 	UserID      int
 	Name        string
-	PhoneNumber int
-	Address     string
+	PhoneNumber string
 	Password    []byte
 	Picture     []byte
 }
 
 // nolint:deadcode // to be implemented
+// Review struct for the database table Review.
 type Review struct {
 	ReviewID  int
 	UserID    int
@@ -48,6 +50,7 @@ type Review struct {
 	Content   string
 }
 
+// Procut struct for the database table Product.
 type Product struct {
 	ProductID   int
 	Name        string
@@ -58,6 +61,7 @@ type Product struct {
 	UserID      int
 }
 
+// setupConfig reads in .env file and ENV variables if set, otherwise use default values.
 func setupConfig() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
@@ -106,6 +110,7 @@ func setupConfig() {
 	databaseURL = "postgres://" + databaseUser + ":" + databasePassword + "@" + databaseHost + ":" + databasePort + "/" + databaseName
 }
 
+// setupDBPool creates a connection pool to the database.
 func setupDBPool() *pgxpool.Pool {
 	dbpool, err := pgxpool.Connect(context.Background(), databaseURL)
 	if err != nil {
@@ -116,10 +121,12 @@ func setupDBPool() *pgxpool.Pool {
 	return dbpool
 }
 
+// ping returns a simple string to test the server is running.
 func ping(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
 }
 
+// setupRouter creates a router with all the routes.
 func setupRouter() *gin.Engine {
 	router := gin.New()
 	// Log to stdout.
@@ -140,6 +147,7 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
+// testDB tests the database connection.
 func testDB() {
 	var greeting string
 	err := dbPool.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
@@ -152,22 +160,7 @@ func testDB() {
 	fmt.Println(greeting)
 }
 
-func main() {
-	setupConfig()
-
-	dbPool = setupDBPool()
-	defer dbPool.Close()
-
-	testDB()
-
-	router := setupRouter()
-	err := router.Run(serverURL)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
+// getUserCommunities returns all communities.
 func getCommunities(c *gin.Context) {
 	query := "SELECT * FROM Community"
 	rows, err := dbPool.Query(c, query)
@@ -194,6 +187,7 @@ func getCommunities(c *gin.Context) {
 	c.JSON(http.StatusOK, communities)
 }
 
+// getUserCommunities returns all communities the user is in.
 func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
@@ -228,13 +222,14 @@ func getUserCommunities(c *gin.Context) {
 	c.JSON(http.StatusOK, communities)
 }
 
+// getUser returns the user with the given id.
 func getUser(c *gin.Context) {
 	var result User
 
 	user := c.Param("userid")
-	query := "SELECT user_id, name, phone_nr, address, password, encode(img, 'base64') from Users WHERE user_id = $1"
+	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64') from Users WHERE user_id = $1"
 
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password, &result.Picture)
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -242,6 +237,7 @@ func getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// getProductID returns the product with the given id.
 func getProductID(c *gin.Context) {
 	var result Product
 
@@ -257,6 +253,7 @@ func getProductID(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// getUserFollowers returns all users that follow the user with the given id.
 func getUserFollowers(c *gin.Context) {
 	user := c.Param("userid")
 	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
@@ -273,7 +270,7 @@ func getUserFollowers(c *gin.Context) {
 	for rows.Next() {
 		var follower User
 
-		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Address)
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture)
 		if err != nil {
 			panic(err)
 		}
@@ -284,21 +281,20 @@ func getUserFollowers(c *gin.Context) {
 	c.JSON(http.StatusOK, followers)
 }
 
+// createUser creates a new user.
 func createUser(c *gin.Context) {
 	name := c.PostForm("name")
-	address := c.PostForm("address")
-	phoneNr, _ := strconv.Atoi(c.PostForm("phone"))
+	phoneNr := c.PostForm("phone")
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
 	user := User{
 		Name:        name,
-		Address:     address,
 		PhoneNumber: phoneNr,
 		Password:    password,
 	}
 
-	query := "INSERT INTO Users(name, phone_nr, address, password) VALUES($1,$2, $3, $4)"
-	_, err := dbPool.Exec(c, query, name, phoneNr, address, password)
+	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
+	_, err := dbPool.Exec(c, query, name, phoneNr, password)
 
 	if err != nil {
 		fmt.Println(err)
@@ -307,6 +303,7 @@ func createUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// login logs in the user with the given credentials.
 func login(c *gin.Context) {
 	var result []byte
 
@@ -336,4 +333,21 @@ func login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tokenString)
+}
+
+// main is the entry point for the application.
+func main() {
+	setupConfig()
+
+	dbPool = setupDBPool()
+	defer dbPool.Close()
+
+	testDB()
+
+	router := setupRouter()
+	err := router.Run(serverURL)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }

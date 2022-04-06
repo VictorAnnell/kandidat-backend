@@ -14,7 +14,7 @@ import (
 
 var router *gin.Engine
 
-// Use a single instance of Validate, it caches struct info
+// Use a single instance of Validate, it caches struct info.
 var validate *validator.Validate
 
 func TestMain(m *testing.M) {
