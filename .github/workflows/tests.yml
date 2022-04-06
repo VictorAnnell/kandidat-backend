@@ -17,6 +17,9 @@ jobs:
         with:
           go-version: 1.18
 
+      - name: Setup database with Docker Compose
+        run: docker-compose up -d
+
       - name: Verify dependencies
         run: go mod verify
 
