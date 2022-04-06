@@ -35,7 +35,7 @@ type Community struct {
 type User struct {
 	UserID      int
 	Name        string
-	PhoneNumber string 
+	PhoneNumber string
 	Password    []byte
 	Picture     []byte
 }
@@ -239,7 +239,7 @@ func getUser(c *gin.Context) {
 
 // getProductID returns the product with the given id.
 func getProductID(c *gin.Context) {
-    var result Product
+	var result Product
 
 	productID := c.Param("productid")
 	query := "SELECT * FROM Product WHERE product_id = $1"
