@@ -24,28 +24,28 @@ type Community struct {
 }
 
 type User struct {
-	UserID int
-	Name string
+	UserID      int
+	Name        string
 	PhoneNumber int
-	Address string
+	Address     string
 }
 
 type Review struct {
-	ReviewID int
-	UserID int
-	ProductID int
-	Rating int
-	Content string
+	ReviewID   int
+	Rating     int
+	Content    string
+	ReviewerID int
+	ProductID  int
 }
 
 type Product struct {
-	ProductID int
-	Name string
-	Service bool
-	Price int
-	UploadDate string
+	ProductID   int
+	Name        string
+	Service     bool
+	Price       int
+	UploadDate  string
 	Description string
-	UserID int
+	UserID      int
 }
 
 func setupConfig() {
@@ -120,9 +120,12 @@ func setupRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.GET("/ping", ping)
+	router.GET("/reviews/:userid", getReviews)
+	router.POST("/reviews/add", createReview)
 	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
-    router.GET("/user/:userid/communities", getUsersCommunities)
+	router.GET("/user/:userid/communities", getUsersCommunities)
+
 	return router
 }
 
@@ -152,6 +155,52 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+type ReviewRequestBody struct {
+	Rating     int
+	Content    string
+	ReviewerID int
+	ProductID  int
+}
+
+func createReview(c *gin.Context) {
+
+	var requestBody ReviewRequestBody
+
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+	}
+
+	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_product_id) VALUES($1,$2, $3, $4)"
+	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.ProductID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
+func getReviews(c *gin.Context) {
+	user := c.Param("userid")
+	query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
+	rows, err := dbPool.Query(c, query, user)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var reviews []Review
+	for rows.Next() {
+		var review Review
+		err := rows.Scan(&review.ReviewID, &review.Rating, &review.Content, &review.ReviewID, &review.ProductID)
+		if err != nil {
+			panic(err)
+		}
+		reviews = append(reviews, review)
+	}
+	c.JSON(http.StatusOK, reviews)
 }
 
 func getCommunities(c *gin.Context) {
@@ -184,7 +233,7 @@ func getUsersCommunities(c *gin.Context) {
 		panic(err)
 	}
 
-    defer rows.Close()
+	defer rows.Close()
 
 	var communities []Community
 	for rows.Next() {
@@ -198,14 +247,6 @@ func getUsersCommunities(c *gin.Context) {
 
 	c.JSON(http.StatusOK, communities)
 }
-
-    
-
-
-
-
-
-
 
 //Useless?
 func getNewCommunities(c *gin.Context) {
