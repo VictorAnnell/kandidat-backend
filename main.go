@@ -122,6 +122,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	router.GET("/reviews/:userid", getReviews)
 	router.POST("/reviews/add", createReview)
+	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/communityname", getCommunityName)
 	router.GET("/user/:userid/communities", getUsersCommunities)
@@ -157,6 +158,35 @@ func main() {
 	}
 }
 
+type ProductRequestBody struct {
+	Name        string
+	Service     bool
+	Price       int
+	UploadDate  string
+	Description string
+	UserID      int
+}
+
+func createProduct(c *gin.Context) {
+
+	var requestBody ProductRequestBody
+
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	query := "INSERT INTO Product(name,service,price,upload_date,description,fk_user_id) VALUES($1,$2,$3,$4,$5,$6)"
+	_, err := dbPool.Exec(c, query, requestBody.Name, requestBody.Service, requestBody.Price, requestBody.UploadDate, requestBody.Description, requestBody.UserID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
 type ReviewRequestBody struct {
 	Rating     int
 	Content    string
@@ -171,7 +201,6 @@ func createReview(c *gin.Context) {
 	if err := c.BindJSON(&requestBody); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
-
 	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_product_id) VALUES($1,$2, $3, $4)"
 	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.ProductID)
 
