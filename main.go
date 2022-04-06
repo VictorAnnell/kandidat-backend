@@ -143,6 +143,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/products/:productid", getProductID)
 	router.POST("/users", createUser)
 	router.POST("/login", login)
+	router.POST("/User_Followers/follow", createFollow)
 
 	return router
 }
@@ -287,6 +288,11 @@ func createUser(c *gin.Context) {
 	phoneNr := c.PostForm("phone")
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
+	//if err := c.BindJSON(&user); err != nil {
+    //    c.JSON(http.StatusInternalServerError, false)
+    //return
+   // }
+
 	user := User{
 		Name:        name,
 		PhoneNumber: phoneNr,
@@ -346,8 +352,30 @@ func main() {
 
 	router := setupRouter()
 	err := router.Run(serverURL)
-
 	if err != nil {
 		fmt.Println(err)
 	}
 }
+
+func createFollow(c *gin.Context) {
+	type Follow  struct{
+		following int
+		followed int
+	}
+	var follow Follow 
+
+	if err := c.BindJSON(&follow); err != nil {
+        c.JSON(http.StatusInternalServerError, false)
+        return
+    }
+
+	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query,follow.following, follow.followed)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
