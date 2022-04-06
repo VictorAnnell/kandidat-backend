@@ -39,6 +39,7 @@ type User struct {
 	Picture     []byte
 }
 
+// nolint:deadcode // to be implemented
 type Review struct {
 	ReviewID  int
 	UserID    int
@@ -135,6 +136,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/products/:productid", getProductID)
 	router.POST("/users", createUser)
 	router.POST("/login", login)
+
 	return router
 }
 
@@ -169,6 +171,7 @@ func main() {
 func getCommunities(c *gin.Context) {
 	query := "SELECT * FROM Community"
 	rows, err := dbPool.Query(c, query)
+
 	if err != nil {
 		panic(err)
 	}
@@ -176,12 +179,15 @@ func getCommunities(c *gin.Context) {
 	defer rows.Close()
 
 	var communities []Community
+
 	for rows.Next() {
 		var community Community
+
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
 			panic(err)
 		}
+
 		communities = append(communities, community)
 	}
 
@@ -191,6 +197,7 @@ func getCommunities(c *gin.Context) {
 func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
+
 	var query string
 	if joined == "false" {
 		query = "SELECT * from Community WHERE community_id != (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
@@ -206,12 +213,15 @@ func getUserCommunities(c *gin.Context) {
 	defer rows.Close()
 
 	var communities []Community
+
 	for rows.Next() {
 		var community Community
+
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
 			panic(err)
 		}
+
 		communities = append(communities, community)
 	}
 
@@ -220,30 +230,37 @@ func getUserCommunities(c *gin.Context) {
 
 func getUser(c *gin.Context) {
 	var result User
+
 	user := c.Param("userid")
 	query := "SELECT user_id, name, phone_nr, address, password, encode(img, 'base64') from Users WHERE user_id = $1"
+
 	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Address, &result.Password, &result.Picture)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	c.JSON(http.StatusOK, result)
 }
 
 func getProductID(c *gin.Context) {
 	var result Product
-	productId := c.Param("productid")
+
+	productID := c.Param("productid")
 	query := "SELECT * FROM Product WHERE product_id = $1"
-	err := dbPool.QueryRow(c, query, productId).Scan(&result)
+
+	err := dbPool.QueryRow(c, query, productID).Scan(&result)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	c.JSON(http.StatusOK, result)
 }
 
 func getUserFollowers(c *gin.Context) {
 	user := c.Param("userid")
 	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
+
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
@@ -252,12 +269,15 @@ func getUserFollowers(c *gin.Context) {
 	defer rows.Close()
 
 	var followers []User
+
 	for rows.Next() {
 		var follower User
+
 		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Address)
 		if err != nil {
 			panic(err)
 		}
+
 		followers = append(followers, follower)
 	}
 
@@ -267,31 +287,34 @@ func getUserFollowers(c *gin.Context) {
 func createUser(c *gin.Context) {
 	name := c.PostForm("name")
 	address := c.PostForm("address")
-	phone_nr, _ := strconv.Atoi(c.PostForm("phone"))
-	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), 14)
+	phoneNr, _ := strconv.Atoi(c.PostForm("phone"))
+	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
 	user := User{
 		Name:        name,
 		Address:     address,
-		PhoneNumber: phone_nr,
+		PhoneNumber: phoneNr,
 		Password:    password,
 	}
 
 	query := "INSERT INTO Users(name, phone_nr, address, password) VALUES($1,$2, $3, $4)"
-	_, err := dbPool.Exec(c, query, name, phone_nr, address, password)
+	_, err := dbPool.Exec(c, query, name, phoneNr, address, password)
 
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	c.JSON(http.StatusOK, user)
 }
 
 func login(c *gin.Context) {
 	var result []byte
-	phone_nr, _ := strconv.Atoi(c.PostForm("phone")) // TODO: Not login with phone_nr maybe??
+
+	phoneNr, _ := strconv.Atoi(c.PostForm("phone")) // TODO: Not login with phone_nr maybe??
 	password := []byte(c.PostForm("password"))
 	query := "SELECT password FROM Users where phone_nr = $1"
-	err := dbPool.QueryRow(c, query, phone_nr).Scan(&result)
+
+	err := dbPool.QueryRow(c, query, phoneNr).Scan(&result)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -308,7 +331,9 @@ func login(c *gin.Context) {
 	})
 
 	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	c.JSON(http.StatusOK, tokenString)
-
 }

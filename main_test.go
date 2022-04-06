@@ -51,6 +51,7 @@ func TestGetCommunities(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	var communityarray []Community
+
 	err := json.Unmarshal(w.Body.Bytes(), &communityarray)
 	if err != nil {
 		t.Errorf("Error unmarshalling json: %v", err)
