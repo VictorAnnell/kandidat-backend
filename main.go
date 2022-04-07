@@ -139,15 +139,15 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	users := router.Group("/users")
 	{
+		users.DELETE("/:userid", delUser)
 		users.GET("/:userid", getUser)
-		users.GET("/:userid/products", getUserProducts)
-		users.GET("/:userid/reviews", getUserReviews)
 		users.GET("/:userid/communities", getUserCommunities)
 		users.GET("/:userid/followers", getUserFollowers)
+		users.GET("/:userid/products", getUserProducts)
+		users.GET("/:userid/reviews", getUserReviews)
 		users.POST("", createUser)
-		users.POST("/:userid/reviews", createReview)
 		users.POST("/:userid/product", createProduct)
-		users.DELETE("/:userid", delUser)
+		users.POST("/:userid/reviews", createReview)
 	}
 
 	communities := router.Group("/communities")
