@@ -141,7 +141,6 @@ func setupRouter() *gin.Engine {
 	router.POST("/reviews/add", createReview)
 	router.GET("user/:userid/products", getProducts)
 	router.POST("/product/add", createProduct)
-	router.GET("/user/:userid/pinned", getPinnedProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
 	router.GET("/users/:userid/communities", getUserCommunities)
@@ -167,31 +166,6 @@ func testDB() {
 }
 
 // Gives you all products that are owned by userId
-
-func getPinnedProduct(c *gin.Context) {
-	user := c.Param("userid")
-	query := "SELECT * from Product WHERE fk_user_id = $1"
-	rows, err := dbPool.Query(c, query, user)
-
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var products []Product
-
-	for rows.Next() {
-		var product Product
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
-
-		if err != nil {
-			panic(err)
-		}
-
-		products = append(products, product)
-	}
-	c.JSON(http.StatusOK, products)
-}
 
 func getProducts(c *gin.Context) {
 	user := c.Param("userid")
