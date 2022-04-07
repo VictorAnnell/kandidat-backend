@@ -289,9 +289,9 @@ func createUser(c *gin.Context) {
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
 	//if err := c.BindJSON(&user); err != nil {
-    //    c.JSON(http.StatusInternalServerError, false)
-    //return
-   // }
+	//    c.JSON(http.StatusInternalServerError, false)
+	//return
+	// }
 
 	user := User{
 		Name:        name,
@@ -358,19 +358,19 @@ func main() {
 }
 
 func createFollow(c *gin.Context) {
-	type Follow  struct{
+	type Follow struct {
 		following int
-		followed int
+		followed  int
 	}
-	var follow Follow 
+	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
-        c.JSON(http.StatusInternalServerError, false)
-        return
-    }
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
 
 	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
-	_, err := dbPool.Exec(c, query,follow.following, follow.followed)
+	_, err := dbPool.Exec(c, query, follow.following, follow.followed)
 
 	if err != nil {
 		fmt.Println(err)
@@ -378,4 +378,3 @@ func createFollow(c *gin.Context) {
 
 	c.JSON(http.StatusOK, true)
 }
-
