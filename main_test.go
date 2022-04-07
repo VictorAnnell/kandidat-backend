@@ -67,3 +67,137 @@ func TestGetCommunities(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestGetUser(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/1", nil)
+	router.ServeHTTP(w, req)
+
+	var user User
+
+	err := json.Unmarshal(w.Body.Bytes(), &user)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate User struct
+	err = validate.Struct(user)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetUserCommunities(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/1/communities", nil)
+	router.ServeHTTP(w, req)
+
+	var communityarray []Community
+
+	err := json.Unmarshal(w.Body.Bytes(), &communityarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Community structs in the array communityarray
+	for _, community := range communityarray {
+		err = validate.Struct(community)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetUserFollowers(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/1/followers", nil)
+	router.ServeHTTP(w, req)
+
+	var userarray []User
+
+	err := json.Unmarshal(w.Body.Bytes(), &userarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all User structs in the array userarray
+	for _, user := range userarray {
+		err = validate.Struct(user)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetProductID(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/products/1", nil)
+	router.ServeHTTP(w, req)
+
+	var product Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &product)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate Product struct
+	err = validate.Struct(product)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetReviews(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/reviews/1", nil)
+	router.ServeHTTP(w, req)
+
+	var reviewarray []Review
+
+	err := json.Unmarshal(w.Body.Bytes(), &reviewarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Review structs in the array reviewarray
+	for _, review := range reviewarray {
+		err = validate.Struct(review)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetProducts(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/user/1/products", nil)
+	router.ServeHTTP(w, req)
+
+	var productarray []Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &productarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Product structs in the array productarray
+	for _, product := range productarray {
+		err = validate.Struct(product)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
