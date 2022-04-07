@@ -139,7 +139,6 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	users := router.Group("/users")
 	{
-		users.DELETE("/:userid", delUser)
 		users.GET("/:userid", getUser)
 		users.GET("/:userid/communities", getUserCommunities)
 		users.GET("/:userid/followers", getUserFollowers)
@@ -148,6 +147,7 @@ func setupRouter() *gin.Engine {
 		users.POST("", createUser)
 		users.POST("/:userid/product", createProduct)
 		users.POST("/:userid/reviews", createReview)
+		users.DELETE("/:userid", deleteUser)
 	}
 
 	communities := router.Group("/communities")
@@ -164,21 +164,7 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
-// testDB tests the database connection.
-func testDB() {
-	var greeting string
-	err := dbPool.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println(greeting)
-}
-
 // Gives you all products that are owned by userId
-
 func getUserProducts(c *gin.Context) {
 	user := c.Param("userid")
 	query := "SELECT * from Product WHERE fk_user_id = $1"
@@ -205,61 +191,44 @@ func getUserProducts(c *gin.Context) {
 }
 
 // Adds a product to the userID
-type ProductRequestBody struct {
-	Name        string
-	Service     bool
-	Price       int
-	UploadDate  string
-	Description string
-	UserID      int
-}
-
 func createProduct(c *gin.Context) {
-	var requestBody ProductRequestBody
-
-	if err := c.BindJSON(&requestBody); err != nil {
+	var product Product
+	user := c.Param("userid")
+	if err := c.BindJSON(&product); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 		return
 	}
 
 	query := "INSERT INTO Product(name,service,price,upload_date,description,fk_user_id) VALUES($1,$2,$3,$4,$5,$6)"
-	_, err := dbPool.Exec(c, query, requestBody.Name, requestBody.Service, requestBody.Price, requestBody.UploadDate, requestBody.Description, requestBody.UserID)
+	_, err := dbPool.Exec(c, query, product.Name, product.Service, product.Price, product.UploadDate, product.Description, user)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 		return
 	}
 
-	c.JSON(http.StatusOK, true)
-}
-
-type ReviewRequestBody struct {
-	Rating     int
-	Content    string
-	ReviewerID int
-	OwnerID    int
+	c.JSON(http.StatusCreated, product)
 }
 
 func createReview(c *gin.Context) {
-	var requestBody ReviewRequestBody
-
-	if err := c.BindJSON(&requestBody); err != nil {
+	var review Review
+	owner := c.Param("userid")
+	if err := c.BindJSON(&review); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
 
-	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_owner_id) VALUES($1,$2, $3, $4)"
-	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.OwnerID)
+	query := "INSERT INTO Review(rating,content, fk_reviewer_id, fk_owner_id) VALUES($1,$2, $3, $4)"
+	_, err := dbPool.Exec(c, query, review.Rating, review.Content, review.ReviewerID, owner)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
 
-	c.JSON(http.StatusOK, true)
+	c.JSON(http.StatusCreated, review)
 }
 
 func getUserReviews(c *gin.Context) {
 	user := c.Param("userid")
-	// query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
 	query := "SELECT * from Review WHERE fk_owner_id = $1"
 	rows, err := dbPool.Query(c, query, user)
 
@@ -405,27 +374,25 @@ func getUserFollowers(c *gin.Context) {
 
 // createUser creates a new user.
 func createUser(c *gin.Context) {
-	name := c.PostForm("name")
-	phoneNr := c.PostForm("phone")
+	var user User
 	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
-	user := User{
-		Name:        name,
-		PhoneNumber: phoneNr,
-		Password:    password,
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
 	}
 
 	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
-	_, err := dbPool.Exec(c, query, name, phoneNr, password)
+	_, err := dbPool.Exec(c, query, user.Name, user.PhoneNumber, password)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusCreated, user)
 }
 
-func delUser(c *gin.Context) {
+func deleteUser(c *gin.Context) {
 	user := c.Param("userid")
 	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
 	_, err := dbPool.Exec(c, fkQuery, user)
@@ -484,8 +451,6 @@ func main() {
 
 	dbPool = setupDBPool()
 	defer dbPool.Close()
-
-	testDB()
 
 	router := setupRouter()
 	err := router.Run(serverURL)

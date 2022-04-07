@@ -27,12 +27,12 @@ CREATE TABLE Review (
     review_id SERIAL PRIMARY KEY,
     rating INT NOT NULL,
     content VARCHAR,
-    fk_reviwer_id INT REFERENCES Users(user_id) NOT NULL,
+    fk_reviewer_id INT REFERENCES Users(user_id) NOT NULL,
     fk_owner_id INT REFERENCES Users(user_id) NOT NULL
 
 );
 
-CREATE TABLE PinnedProduct (
+CREATE TABLE Pinned_Product (
     pinnedproduct_id SERIAL PRIMARY KEY,
     fk_product_id INT REFERENCES Product(product_id) ON DELETE CASCADE NOT NULL,
     fk_user_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL
@@ -51,20 +51,25 @@ CREATE TABLE User_Community (
 );
 
 
+/* test users user_id = 1 & 2 */
+INSERT INTO Users (name, phone_nr, password, img, rating) VALUES ('Gustav', '+1 202-918-2132', 'lorem ipsum', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea, 3);
 
-INSERT INTO Users (name, phone_nr, password,rating) VALUES ('Gustav', '+1 202-918-2132', 'lorem ipsum',3), ('Victor', '+1 202-918-2131', 'lorem ipsum',3), ('Rohat', 123, 'lorem ipsum', 4);
-INSERT INTO Users (name, phone_nr, password, img,rating) VALUES ('Victor Kill', 123, 'lorem ipsum', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea, 2);
-INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa','true',1,'2022-04-07','Hej',1),('Soffa','false',2,'2022-04-07','Hej',1);
-INSERT INTO Review (rating,content, fk_reviwer_id, fk_owner_id) VALUES (2,'SÄMST',1,1),(3,'SÄMRE',2,2);
+INSERT INTO USERS (name, phone_nr, password, rating) VALUES ('Victor', '+1 202-745-5483', 'lorem ipsum', 4);
+
+/* test products product_id = 1 */
+INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa','true',1,'2022-04-07','Hej',1);
+
+/* test review review_id = 1 */
+INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);
+
+/* test communities community_id = 1 & 2 & 3 */
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
-INSERT INTO Product (name, service, price, upload_date, description, fk_user_id) VALUES ('Rosa soffa', False, 200, '2022-02-02', 
-'A nice couch', 1);
-INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1);
 
+/* test pinned_product pinnedproduct_id = 1 */
+INSERT INTO Pinned_Product (fk_product_id, fk_user_id) VALUES (1,1);
 
+/* test user_community pinnedproduct_id = 1 */
+INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (1,2);
 
-INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
-    (SELECT user_id from Users where name='Gustav'),
-    (SELECT community_id from Community where name='Memes'));
-
-INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES (1, 2);
+/* test user_followers user_follower_id = 1 */
+INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES (2, 1);
