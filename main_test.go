@@ -225,6 +225,15 @@ func TestCreateProduct(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
 
+func TestCreateMalformedProduct(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/users/1/products", strings.NewReader(`{"wrong-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func TestCreateReview(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/users/1/reviews", strings.NewReader(`{"rating": "5", "description": "Test Description", "reviewerid": "2"}`))
@@ -267,4 +276,52 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestGetNonExistentUser(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/99999", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetNonExistentUserCommunities(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/99999/communities", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetNonExistentUserFollowers(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/99999/followers", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetNonExistentUserProducts(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/99999/products", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetNonExistentUserReviews(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/99999/reviews", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetNonExistentProduct(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/products/99999", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
