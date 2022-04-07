@@ -137,17 +137,28 @@ func setupRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.GET("/ping", ping)
-	router.GET("/users/:userid/reviews", getUserReviews)
-	router.POST("/reviews/add", createReview)
-	router.GET("/users/:userid/products", getUserProducts)
-	router.POST("/product/add", createProduct)
-	router.GET("/communities", getCommunities)
-	router.GET("/users/:userid", getUser)
-	router.DELETE("/users/:userid", delUser)
-	router.GET("/users/:userid/communities", getUserCommunities)
-	router.GET("/users/:userid/followers", getUserFollowers)
-	router.GET("/products/:productid", getProduct)
-	router.POST("/users", createUser)
+	users := router.Group("/users")
+	{
+		users.GET("/:userid", getUser)
+		users.GET("/:userid/products", getUserProducts)
+		users.GET("/:userid/reviews", getUserReviews)
+		users.GET("/:userid/communities", getUserCommunities)
+		users.GET("/:userid/followers", getUserFollowers)
+		users.POST("", createUser)
+		users.POST("/:userid/reviews", createReview)
+		users.POST("/:userid/product", createProduct)
+		users.DELETE("/:userid", delUser)
+	}
+
+	communities := router.Group("/communities")
+	{
+		communities.GET("", getCommunities)
+	}
+
+	products := router.Group("/products")
+	{
+		products.GET("/:productid", getProduct)
+	}
 	router.POST("/login", login)
 
 	return router

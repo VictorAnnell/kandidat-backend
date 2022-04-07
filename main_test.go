@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -200,4 +201,70 @@ func TestGetUserProducts(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestCreateProduct(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/users/1/products", strings.NewReader(`{"name": "Test Product", "service": false, "price": "1.00", "description": "Test Description"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	var product Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &product)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate Product struct
+	err = validate.Struct(product)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestCreateReview(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/users/1/reviews", strings.NewReader(`{"rating": "5", "description": "Test Description", "reviewerid": "2"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	var review Review
+
+	err := json.Unmarshal(w.Body.Bytes(), &review)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate Review struct
+	err = validate.Struct(review)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestCreateUser(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/users", strings.NewReader(`{"name": "Test User", "phonenumber": "123456", "password": "a nice password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	var user User
+
+	err := json.Unmarshal(w.Body.Bytes(), &user)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate Review struct
+	err = validate.Struct(user)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	assert.Equal(t, http.StatusCreated, w.Code)
 }
