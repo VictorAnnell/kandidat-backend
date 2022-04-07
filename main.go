@@ -137,16 +137,16 @@ func setupRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.GET("/ping", ping)
-	router.GET("/reviews/:userid", getReviews)
+	router.GET("/users/:userid/reviews", getUserReviews)
 	router.POST("/reviews/add", createReview)
-	router.GET("user/:userid/products", getProducts)
+	router.GET("/users/:userid/products", getUserProducts)
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
 	router.DELETE("/users/:userid", delUser)
 	router.GET("/users/:userid/communities", getUserCommunities)
 	router.GET("/users/:userid/followers", getUserFollowers)
-	router.GET("/products/:productid", getProductID)
+	router.GET("/products/:productid", getProduct)
 	router.POST("/users", createUser)
 	router.POST("/login", login)
 
@@ -168,7 +168,7 @@ func testDB() {
 
 // Gives you all products that are owned by userId
 
-func getProducts(c *gin.Context) {
+func getUserProducts(c *gin.Context) {
 	user := c.Param("userid")
 	query := "SELECT * from Product WHERE fk_user_id = $1"
 	rows, err := dbPool.Query(c, query, user)
@@ -246,7 +246,7 @@ func createReview(c *gin.Context) {
 	c.JSON(http.StatusOK, true)
 }
 
-func getReviews(c *gin.Context) {
+func getUserReviews(c *gin.Context) {
 	user := c.Param("userid")
 	// query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
 	query := "SELECT * from Review WHERE fk_owner_id = $1"
@@ -348,8 +348,8 @@ func getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// getProductID returns the product with the given id.
-func getProductID(c *gin.Context) {
+// getProduct returns the product with the given id.
+func getProduct(c *gin.Context) {
 	var result Product
 
 	productID := c.Param("productid")

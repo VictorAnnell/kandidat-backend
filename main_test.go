@@ -135,7 +135,7 @@ func TestGetUserFollowers(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestGetProductID(t *testing.T) {
+func TestGetProduct(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/products/1", nil)
 	router.ServeHTTP(w, req)
@@ -156,9 +156,9 @@ func TestGetProductID(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestGetReviews(t *testing.T) {
+func TestUserGetReviews(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/reviews/1", nil)
+	req, _ := http.NewRequest("GET", "/users/1/reviews", nil)
 	router.ServeHTTP(w, req)
 
 	var reviewarray []Review
@@ -179,9 +179,9 @@ func TestGetReviews(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestGetProducts(t *testing.T) {
+func TestGetUserProducts(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/1/products", nil)
+	req, _ := http.NewRequest("GET", "/users/1/products", nil)
 	router.ServeHTTP(w, req)
 
 	var productarray []Product
