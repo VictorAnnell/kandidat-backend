@@ -138,8 +138,9 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
+	router.DELETE("/users/:userid", delUser)
 	router.GET("/users/:userid/communities", getUserCommunities)
-	router.GET("users/:userid/followers", getUserFollowers)
+	router.GET("/users/:userid/followers", getUserFollowers)
 	router.GET("/products/:productid", getProductID)
 	router.POST("/users", createUser)
 	router.POST("/login", login)
@@ -301,6 +302,27 @@ func createUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func delUser(c *gin.Context) {
+	user := c.Param("userid")
+	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
+	_, err := dbPool.Exec(c, fkQuery, user)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	query := "DELETE FROM Users where user_id = $1"
+	_, err = dbPool.Exec(c, query, user)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	c.Status(http.StatusOK)
 }
 
 // login logs in the user with the given credentials.
