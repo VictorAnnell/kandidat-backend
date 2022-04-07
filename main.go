@@ -39,6 +39,7 @@ type User struct {
 	PhoneNumber string
 	Password    []byte
 	Picture     []byte
+	rating      float32
 }
 
 // Review struct for the database table Review.
@@ -47,14 +48,14 @@ type Review struct {
 	Rating     int
 	Content    string
 	ReviewerID int
-	ProductID  int
+	OwnerID    int
 }
 
 // Procut struct for the database table Product.
 type Product struct {
 	ProductID   int
 	Name        string
-	Service     int
+	Service     bool
 	Price       int
 	UploadDate  pgtype.Date
 	Description string
@@ -140,6 +141,7 @@ func setupRouter() *gin.Engine {
 	router.POST("/reviews/add", createReview)
 	router.GET("user/:userid/products", getProducts)
 	router.POST("/product/add", createProduct)
+	router.GET("/user/:userid/pinned", getPinnedProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
 	router.GET("/users/:userid/communities", getUserCommunities)
@@ -165,6 +167,31 @@ func testDB() {
 }
 
 // Gives you all products that are owned by userId
+
+func getPinnedProduct(c *gin.Context) {
+	user := c.Param("userid")
+	query := "SELECT * from Product WHERE fk_user_id = $1"
+	rows, err := dbPool.Query(c, query, user)
+
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var products []Product
+
+	for rows.Next() {
+		var product Product
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+
+		if err != nil {
+			panic(err)
+		}
+
+		products = append(products, product)
+	}
+	c.JSON(http.StatusOK, products)
+}
 
 func getProducts(c *gin.Context) {
 	user := c.Param("userid")
@@ -224,7 +251,7 @@ type ReviewRequestBody struct {
 	Rating     int
 	Content    string
 	ReviewerID int
-	ProductID  int
+	OwnerID    int
 }
 
 func createReview(c *gin.Context) {
@@ -234,8 +261,8 @@ func createReview(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, false)
 	}
 
-	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_product_id) VALUES($1,$2, $3, $4)"
-	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.ProductID)
+	query := "INSERT INTO Review(rating,content,fk_reviwer_id, fk_owner_id) VALUES($1,$2, $3, $4)"
+	_, err := dbPool.Exec(c, query, requestBody.Rating, requestBody.Content, requestBody.ReviewerID, requestBody.OwnerID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, false)
@@ -246,7 +273,8 @@ func createReview(c *gin.Context) {
 
 func getReviews(c *gin.Context) {
 	user := c.Param("userid")
-	query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
+	// query := "SELECT * from Review WHERE fk_product_id IN (SELECT product_id FROM Product WHERE fk_user_id = $1)"
+	query := "SELECT * from Review WHERE fk_owner_id = $1"
 	rows, err := dbPool.Query(c, query, user)
 
 	if err != nil {
@@ -258,7 +286,7 @@ func getReviews(c *gin.Context) {
 
 	for rows.Next() {
 		var review Review
-		err := rows.Scan(&review.ReviewID, &review.Rating, &review.Content, &review.ReviewID, &review.ProductID)
+		err := rows.Scan(&review.ReviewID, &review.Rating, &review.Content, &review.ReviewID, &review.OwnerID)
 
 		if err != nil {
 			panic(err)
@@ -352,7 +380,7 @@ func getProductID(c *gin.Context) {
 	productID := c.Param("productid")
 	query := "SELECT * FROM Product WHERE product_id = $1"
 
-	err := dbPool.QueryRow(c, query, productID).Scan(&result)
+	err := dbPool.QueryRow(c, query, productID).Scan(&result.ProductID, &result.Name, &result.Service, &result.Price, &result.UploadDate, &result.Description, &result.UserID)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -378,7 +406,7 @@ func getUserFollowers(c *gin.Context) {
 	for rows.Next() {
 		var follower User
 
-		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture)
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.rating)
 		if err != nil {
 			panic(err)
 		}
