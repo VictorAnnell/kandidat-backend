@@ -26,7 +26,7 @@ CREATE TABLE Review (
     review_id SERIAL PRIMARY KEY,
     rating INT NOT NULL,
     content VARCHAR,
-    fk_user_id INT REFERENCES Users(user_id) NOT NULL,
+    fk_reviwer_id INT REFERENCES Users(user_id) NOT NULL,
     fk_product_id INT REFERENCES Product(product_id) NOT NULL
 );
 
@@ -42,6 +42,10 @@ CREATE TABLE User_Community (
     fk_community_id INT REFERENCES Community(community_id) NOT NULL
 );
 
+
+INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa',1,1,'2022-04-07','Hej',1),('Soffa',1,2,'2022-04-07','Hej',1);
+
+INSERT INTO Review (rating,content, fk_reviwer_id, fk_product_id) VALUES (2,'SÄMST',1,1),(3,'SÄMRE',2,2);
 INSERT INTO Users (name, phone_nr, password) VALUES ('Gustav', '+1 202-918-2132', 'lorem ipsum'), ('Victor', '+1 202-918-2131', 'lorem ipsum'), ('Rohat', 123, 'lorem ipsum');
 
 INSERT INTO Users (name, phone_nr, password, img) VALUES ('Victor Kill', 123, 'lorem ipsum', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea);
