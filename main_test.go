@@ -18,6 +18,13 @@ var router *gin.Engine
 // Use a single instance of Validate, it caches struct info.
 var validate *validator.Validate
 
+// HTTP method constants
+const (
+	get = "GET"
+	post = "POST"
+	delete = "DELETE"
+)
+
 func TestMain(m *testing.M) {
 	// Run test suite
 	os.Exit(RunTests(m))
@@ -47,6 +54,13 @@ func TestPingRoute(t *testing.T) {
 }
 
 func TestGetCommunities(t *testing.T) {
+	HTTPMethod := "GET"
+	endpoint := "/communities"
+	reqBody := ``
+	expectedHTTPStatusCode := http.StatusOK
+	expectedResponseStruct := []Community{}
+	reqTester(t, HTTPMethod, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/communities", nil)
 	router.ServeHTTP(w, req)
@@ -70,6 +84,7 @@ func TestGetCommunities(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
+	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1", nil)
 	router.ServeHTTP(w, req)
@@ -88,9 +103,16 @@ func TestGetUser(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetUserCommunities(t *testing.T) {
+	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1/communities", nil)
 	router.ServeHTTP(w, req)
@@ -111,9 +133,17 @@ func TestGetUserCommunities(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999/communities", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetUserFollowers(t *testing.T) {
+	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1/followers", nil)
 	router.ServeHTTP(w, req)
@@ -134,9 +164,17 @@ func TestGetUserFollowers(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999/followers", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetProduct(t *testing.T) {
+	// Test with valid product ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/products/1", nil)
 	router.ServeHTTP(w, req)
@@ -155,9 +193,17 @@ func TestGetProduct(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid product ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/products/99999", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestUserGetReviews(t *testing.T) {
+	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1/reviews", nil)
 	router.ServeHTTP(w, req)
@@ -178,9 +224,17 @@ func TestUserGetReviews(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999/reviews", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetUserProducts(t *testing.T) {
+	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1/products", nil)
 	router.ServeHTTP(w, req)
@@ -201,127 +255,113 @@ func TestGetUserProducts(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999/products", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestCreateProduct(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/users/1/products", strings.NewReader(`{"name": "Test Product", "service": false, "price": "1.00", "description": "Test Description"}`))
-	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
+	// Test with valid JSON body and valid user ID
+	endpoint := "/users/1/products"
+	reqBody := `{"name": "Test Product", "service": false, "price": "2.00", "description": "Test Description"}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := Product{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	var product Product
+	// Test with invalid JSON body and valid user ID
+	endpoint = "/users/1/products"
+	reqBody = `{"wrong-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	expectedResponseStruct = Product{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	err := json.Unmarshal(w.Body.Bytes(), &product)
-	if err != nil {
-		t.Errorf("Error unmarshalling json: %v", err)
-	}
+	// Test with valid JSON body and invalid user ID
+	endpoint = "/users/99999/products"
+	reqBody = `{"name": "Test Product", "service": false, "price": "1.00", "description": "Test Description"}`
+	expectedHTTPStatusCode = http.StatusNotFound
+	expectedResponseStruct = Product{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	// Validate Product struct
-	err = validate.Struct(product)
-	if err != nil {
-		t.Errorf("Error validating struct: %v", err)
-	}
-
-	assert.Equal(t, http.StatusCreated, w.Code)
-}
-
-func TestCreateMalformedProduct(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/users/1/products", strings.NewReader(`{"wrong-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`))
-	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	// Test with invalid JSON body and invalid user ID
+	endpoint = "/users/99999/products"
+	reqBody = `{"invalid-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`
+	expectedHTTPStatusCode = http.StatusNotFound
+	expectedResponseStruct = Product{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 }
 
 func TestCreateReview(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/users/1/reviews", strings.NewReader(`{"rating": "5", "description": "Test Description", "reviewerid": "2"}`))
-	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
+	// Test with valid JSON body and valid user ID
+	endpoint := "/users/1/reviews"
+	reqBody := `{"rating": "5", "description": "Test Description", "reviewerid": "2"}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := Review{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	var review Review
+	// Test with invalid JSON body and valid user ID
+	endpoint = "/users/1/reviews"
+	reqBody = `{"rating": "this should be a number", "description": "Test Description", "reviewerid": "2"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	expectedResponseStruct = Review{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	err := json.Unmarshal(w.Body.Bytes(), &review)
-	if err != nil {
-		t.Errorf("Error unmarshalling json: %v", err)
-	}
+	// Test with valid JSON body and invalid user ID
+	endpoint = "/users/99999/reviews"
+	reqBody = `{"name": "Test Product", "service": false, "price": "1.00", "description": "Test Description"}`
+	expectedHTTPStatusCode = http.StatusNotFound
+	expectedResponseStruct = Review{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 
-	// Validate Review struct
-	err = validate.Struct(review)
-	if err != nil {
-		t.Errorf("Error validating struct: %v", err)
-	}
-
-	assert.Equal(t, http.StatusCreated, w.Code)
+	// Test with invalid JSON body and invalid user ID
+	endpoint = "/users/99999/reviews"
+	reqBody = `{"rating": "this should be a number", "description": "Test Description", "reviewerid": "2"}`
+	expectedHTTPStatusCode = http.StatusNotFound
+	expectedResponseStruct = Review{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
 }
 
 func TestCreateUser(t *testing.T) {
+	// Test with valid JSON body
+	endpoint := "/users"
+	reqBody := `{"name": "Test User", "phonenumber": "123456", "password": "a nice password"}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := User{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
+
+	// Test with invalid JSON body
+	endpoint = "/users"
+	reqBody = `{"invalid-field-name": "Test User", "phonenumber": "this should be a number", "password": "a nice password"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	expectedResponseStruct = User{}
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
+}
+
+// reqTester is a helper function for request testing
+func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string, expectedHTTPStatusCode int, expectedResponseStruct any) {
+	t.Helper()
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/users", strings.NewReader(`{"name": "Test User", "phonenumber": "123456", "password": "a nice password"}`))
-	req.Header.Set("Content-Type", "application/json")
+	req, _ := http.NewRequest(httpMethod, endpoint, strings.NewReader(reqBody))
+
+	if httpMethod == "POST" || httpMethod == "PUT" || httpMethod == "PATCH" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
 	router.ServeHTTP(w, req)
 
-	var user User
-
-	err := json.Unmarshal(w.Body.Bytes(), &user)
+	err := json.Unmarshal(w.Body.Bytes(), &expectedResponseStruct)
 	if err != nil {
 		t.Errorf("Error unmarshalling json: %v", err)
 	}
 
-	// Validate Review struct
-	err = validate.Struct(user)
+	// Validate struct
+	err = validate.Struct(expectedResponseStruct)
 	if err != nil {
 		t.Errorf("Error validating struct: %v", err)
 	}
 
-	assert.Equal(t, http.StatusCreated, w.Code)
-}
-
-func TestGetNonExistentUser(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/99999", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetNonExistentUserCommunities(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/99999/communities", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetNonExistentUserFollowers(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/99999/followers", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetNonExistentUserProducts(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/99999/products", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetNonExistentUserReviews(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/99999/reviews", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestGetNonExistentProduct(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/products/99999", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, expectedHTTPStatusCode, w.Code)
 }
