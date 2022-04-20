@@ -54,13 +54,6 @@ func TestPingRoute(t *testing.T) {
 }
 
 func TestGetCommunities(t *testing.T) {
-	HTTPMethod := "GET"
-	endpoint := "/communities"
-	reqBody := ``
-	expectedHTTPStatusCode := http.StatusOK
-	expectedResponseStruct := []Community{}
-	reqTester(t, HTTPMethod, endpoint, reqBody, expectedHTTPStatusCode, expectedResponseStruct)
-
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/communities", nil)
 	router.ServeHTTP(w, req)
