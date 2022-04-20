@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Create the JWT key used to create the signature
@@ -37,7 +35,7 @@ type User struct {
 	UserID      int
 	Name        string
 	PhoneNumber string
-	Password    []byte
+	Password    string
 	Picture     []byte
 	rating      float32
 }
@@ -375,7 +373,6 @@ func getUserFollowers(c *gin.Context) {
 // createUser creates a new user.
 func createUser(c *gin.Context) {
 	var user User
-	password, _ := bcrypt.GenerateFromPassword([]byte(c.PostForm("password")), bcrypt.DefaultCost)
 
 	if err := c.BindJSON(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
@@ -383,13 +380,13 @@ func createUser(c *gin.Context) {
 	}
 
 	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
-	_, err := dbPool.Exec(c, query, user.Name, user.PhoneNumber, password)
+	_, err := dbPool.Exec(c, query, user.Name, user.PhoneNumber, user.Password)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusOK, true)
 }
 
 func deleteUser(c *gin.Context) {
@@ -415,22 +412,36 @@ func deleteUser(c *gin.Context) {
 
 // login logs in the user with the given credentials.
 func login(c *gin.Context) {
-	var result []byte
+	type LoginUser struct {
+		PhoneNumber string
+		Password    string
+	}
 
-	phoneNr, _ := strconv.Atoi(c.PostForm("phone")) // TODO: Not login with phone_nr maybe??
-	password := []byte(c.PostForm("password"))
-	query := "SELECT password FROM Users where phone_nr = $1"
+	var response struct {
+		ID    int
+		Token string
+	}
 
-	err := dbPool.QueryRow(c, query, phoneNr).Scan(&result)
+	var result LoginUser
+	var id int
+
+	if err := c.BindJSON(&result); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	password := result.Password
+	query := "SELECT password, user_id FROM Users where phone_nr = $1"
+
+	err := dbPool.QueryRow(c, query, result.PhoneNumber).Scan(&result.Password, &id)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	err = bcrypt.CompareHashAndPassword(result, password)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if password != result.Password {
+		c.JSON(http.StatusBadGateway, false)
+		return
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -442,7 +453,10 @@ func login(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-	c.JSON(http.StatusOK, tokenString)
+	response.ID = id
+	response.Token = tokenString
+
+	c.JSON(http.StatusOK, response)
 }
 
 // main is the entry point for the application.
