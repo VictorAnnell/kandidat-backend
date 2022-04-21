@@ -59,7 +59,7 @@ INSERT INTO Review (rating,content, fk_reviwer_id, fk_owner_id) VALUES (2,'SÄMS
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 INSERT INTO Product (name, service, price, upload_date, description, fk_user_id) VALUES ('Rosa soffa', False, 200, '2022-02-02', 
 'A nice couch', 1);
-INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1);
+INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1),(2,1),(3,1);
 
 
 
