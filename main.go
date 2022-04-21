@@ -40,6 +40,11 @@ type User struct {
 	rating      float32
 }
 
+type UserCommunity struct {
+    CommunityID int
+}
+
+
 // Review struct for the database table Review.
 type Review struct {
 	ReviewID   int
@@ -145,7 +150,9 @@ func setupRouter() *gin.Engine {
 		users.POST("", createUser)
 		users.POST("/:userid/product", createProduct)
 		users.POST("/:userid/reviews", createReview)
+        users.POST("/:userid/communities", joinCommunity)
 		users.DELETE("/:userid", deleteUser)
+
 	}
 
 	communities := router.Group("/communities")
@@ -223,6 +230,22 @@ func createReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, review)
+}
+
+func joinCommunity(c *gin.Context) {
+    var userCommunity UserCommunity
+    user := c.Param("userid")
+	if err := c.BindJSON(&userCommunity); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+	}
+
+    query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2)"
+    _, err := dbPool.Exec(c, query, user, userCommunity.CommunityID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+	}
+	c.JSON(http.StatusCreated, userCommunity)
 }
 
 func getUserReviews(c *gin.Context) {
