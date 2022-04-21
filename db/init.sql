@@ -1,7 +1,7 @@
 CREATE TABLE Users(
     user_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
-    phone_nr VARCHAR NOT NULL,
+    phone_nr VARCHAR NOT NULL UNIQUE,
     password VARCHAR NOT NULL,
     img bytea,
     rating real

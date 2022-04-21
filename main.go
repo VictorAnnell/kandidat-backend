@@ -283,7 +283,7 @@ func getUserCommunities(c *gin.Context) {
 
 	var query string
 	if joined == "false" {
-		query = "SELECT * from Community WHERE community_id != (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+		query = "SELECT * from Community WHERE community_id NOT IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
 	} else {
 		query = "SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
 	}
@@ -379,8 +379,8 @@ func createUser(c *gin.Context) {
 		return
 	}
 
-	query := "INSERT INTO Users(name, phone_nr, password) VALUES($1,$2, $3)"
-	_, err := dbPool.Exec(c, query, user.Name, user.PhoneNumber, user.Password)
+	query := "INSERT INTO Users(name, phone_nr, password, img) VALUES($1,$2, $3, $4)"
+	_, err := dbPool.Exec(c, query, user.Name, user.PhoneNumber, user.Password, user.Picture)
 
 	if err != nil {
 		fmt.Println(err)
