@@ -142,7 +142,6 @@ func setupRouter() *gin.Engine {
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
-	// router.DELETE("/users/:userid", delUser)
 	router.GET("/users/:userid/pinned", getPinnedProducts)
 	router.POST("/users/:userid/pinned", addPinnedProducts)
 	router.GET("/users/:userid/communities", getUserCommunities)
@@ -188,6 +187,7 @@ func addPinnedProducts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "hallå")
 		return
 	}
+
 	c.JSON(http.StatusOK, true)
 }
 
@@ -212,6 +212,7 @@ func getPinnedProducts(c *gin.Context) {
 		if err != nil {
 			panic(err)
 		}
+
 		pinnedProducts = append(pinnedProducts, product)
 	}
 	c.JSON(http.StatusOK, pinnedProducts)
@@ -288,13 +289,14 @@ func createReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, true)
+
 	queryUpdaterating := "UPDATE Users SET rating = (SELECT AVG(rating) FROM Review WHERE fk_owner_id = $1) WHERE user_id = $1"
+
 	_, er := dbPool.Exec(c, queryUpdaterating, requestBody.OwnerID)
 
 	if er != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
-
 }
 
 func getReviews(c *gin.Context) {
@@ -464,27 +466,6 @@ func createUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
-}
-
-func delUser(c *gin.Context) {
-	user := c.Param("userid")
-	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
-	_, err := dbPool.Exec(c, fkQuery, user)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	query := "DELETE FROM Users where user_id = $1"
-	_, err = dbPool.Exec(c, query, user)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	c.Status(http.StatusOK)
 }
 
 // login logs in the user with the given credentials.
