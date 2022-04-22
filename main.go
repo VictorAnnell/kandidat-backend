@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Create the JWT key used to create the signature
+// Create the JWT key used to create the signature€
 var jwtKey = []byte("my_secret_key")
 
 var (
@@ -142,7 +142,7 @@ func setupRouter() *gin.Engine {
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
-	//router.DELETE("/users/:userid", delUser)
+	// router.DELETE("/users/:userid", delUser)
 	router.GET("/users/:userid/pinned", getPinnedProducts)
 	router.POST("/users/:userid/pinned", addPinnedProducts)
 	router.GET("/users/:userid/communities", getUserCommunities)
@@ -171,7 +171,9 @@ func addPinnedProducts(c *gin.Context) {
 	type pinned struct {
 		Productid int
 	}
+
 	var productid pinned
+
 	user := c.Param("userid")
 
 	if err := c.BindJSON(&productid); err != nil {
@@ -271,13 +273,6 @@ func createProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, true)
 }
 
-type ReviewRequestBody struct {
-	Rating     int
-	Content    string
-	ReviewerID int
-	OwnerID    int
-}
-
 func createReview(c *gin.Context) {
 	var requestBody Review
 
@@ -355,6 +350,7 @@ func getCommunities(c *gin.Context) {
 }
 
 // getUserCommunities returns all communities the user is in.
+
 func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
