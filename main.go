@@ -144,7 +144,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/users/:userid", getUser)
 	//router.DELETE("/users/:userid", delUser)
 	router.GET("/users/:userid/pinned", getPinnedProducts)
-	// router.POST("/users/:userid/pinned", addPinnedProducts)
+	router.POST("/users/:userid/pinned", addPinnedProducts)
 	router.GET("/users/:userid/communities", getUserCommunities)
 	router.GET("/users/:userid/followers", getUserFollowers)
 	router.GET("/products/:productid", getProductID)
@@ -167,6 +167,30 @@ func testDB() {
 	fmt.Println(greeting)
 }
 
+func addPinnedProducts(c *gin.Context) {
+	type pinned struct {
+		Productid int
+	}
+	var productid pinned
+	user := c.Param("userid")
+
+	if err := c.BindJSON(&productid); err != nil {
+		c.JSON(http.StatusInternalServerError, "hej")
+		return
+	}
+
+	query := "INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, productid.Productid, user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, "hallå")
+		return
+	}
+	c.JSON(http.StatusOK, true)
+}
+
+// Get the products that userid has pinned
+
 func getPinnedProducts(c *gin.Context) {
 	user := c.Param("userid")
 	query := "SELECT * from Product WHERE product_id IN (SELECT fk_product_id FROM PinnedProduct WHERE fk_user_id = $1)"
@@ -186,7 +210,6 @@ func getPinnedProducts(c *gin.Context) {
 		if err != nil {
 			panic(err)
 		}
-
 		pinnedProducts = append(pinnedProducts, product)
 	}
 	c.JSON(http.StatusOK, pinnedProducts)
