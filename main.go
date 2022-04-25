@@ -41,9 +41,8 @@ type User struct {
 }
 
 type UserCommunity struct {
-    CommunityID int
+	CommunityID int
 }
-
 
 // Review struct for the database table Review.
 type Review struct {
@@ -150,7 +149,7 @@ func setupRouter() *gin.Engine {
 		users.POST("", createUser)
 		users.POST("/:userid/product", createProduct)
 		users.POST("/:userid/reviews", createReview)
-        users.POST("/:userid/communities", joinCommunity)
+		users.POST("/:userid/communities", joinCommunity)
 		users.DELETE("/:userid", deleteUser)
 
 	}
@@ -162,6 +161,7 @@ func setupRouter() *gin.Engine {
 
 	products := router.Group("/products")
 	{
+		products.GET("", getProducts)
 		products.GET("/:productid", getProduct)
 	}
 	router.POST("/login", login)
@@ -233,14 +233,14 @@ func createReview(c *gin.Context) {
 }
 
 func joinCommunity(c *gin.Context) {
-    var userCommunity UserCommunity
-    user := c.Param("userid")
+	var userCommunity UserCommunity
+	user := c.Param("userid")
 	if err := c.BindJSON(&userCommunity); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
 	}
 
-    query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2)"
-    _, err := dbPool.Exec(c, query, user, userCommunity.CommunityID)
+	query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2)"
+	_, err := dbPool.Exec(c, query, user, userCommunity.CommunityID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, false)
@@ -297,6 +297,32 @@ func getCommunities(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, communities)
+}
+
+func getProducts(c *gin.Context) {
+	query := "SELECT * FROM Product"
+	rows, err := dbPool.Query(c, query)
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	var products []Product
+
+	for rows.Next() {
+		var product Product
+
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+		if err != nil {
+			panic(err)
+		}
+
+		products = append(products, product)
+	}
+
+	c.JSON(http.StatusOK, products)
 }
 
 // getUserCommunities returns all communities the user is in.
