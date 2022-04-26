@@ -402,11 +402,14 @@ func getProduct(c *gin.Context) {
 // getUserFollowers returns all users that follow the user with the given id.
 func getUserFollowers(c *gin.Context) {
 	user := c.Param("userid")
-	query := "Select * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)"
+	query := `SELECT * FROM Users WHERE user_id = $1
+						UNION
+						SELECT * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)`
 
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
-		panic(err)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	defer rows.Close()
@@ -418,11 +421,20 @@ func getUserFollowers(c *gin.Context) {
 
 		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.rating)
 		if err != nil {
-			panic(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		followers = append(followers, follower)
 	}
+
+	if len(followers) == 0 {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	// Pop the first element, which is the user itself.
+	followers = followers[1:]
 
 	c.JSON(http.StatusOK, followers)
 }
