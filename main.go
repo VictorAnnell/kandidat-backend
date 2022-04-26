@@ -135,7 +135,9 @@ func setupRouter() *gin.Engine {
 	router := gin.New()
 	// Log to stdout.
 	gin.DefaultWriter = os.Stdout
-	router.Use(gin.Logger())
+	if gin.Mode() != "test" {
+		router.Use(gin.Logger())
+	}
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	router.Use(gin.Recovery())
 
