@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -281,7 +280,8 @@ func getCommunities(c *gin.Context) {
 	rows, err := dbPool.Query(c, query)
 
 	if err != nil {
-		panic(err)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	defer rows.Close()
@@ -334,15 +334,33 @@ func getUserCommunities(c *gin.Context) {
 	joined := c.DefaultQuery("joined", "true")
 
 	var query string
+	// Check if user exist
+	var result User
+	query = "SELECT user_id from Users WHERE user_id = $1"
+
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Status(http.StatusNotFound)
+			return
+		} else {
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if joined == "false" {
-		query = "SELECT * from Community WHERE community_id NOT IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+		query = " SELECT * from Community WHERE community_id NOT IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
 	} else {
-		query = "SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
+		query = " SELECT * from Community WHERE community_id IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
 	}
 
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
 		panic(err)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	defer rows.Close()
@@ -354,7 +372,8 @@ func getUserCommunities(c *gin.Context) {
 
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
-			panic(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		communities = append(communities, community)
@@ -373,10 +392,12 @@ func getUser(c *gin.Context) {
 	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.Status(http.StatusNotFound)
+			return
 		} else {
 			fmt.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -392,8 +413,8 @@ func getProduct(c *gin.Context) {
 
 	err := dbPool.QueryRow(c, query, productID).Scan(&result.ProductID, &result.Name, &result.Service, &result.Price, &result.UploadDate, &result.Description, &result.UserID)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		c.Status(http.StatusNotFound)
+		return
 	}
 
 	c.JSON(http.StatusOK, result)

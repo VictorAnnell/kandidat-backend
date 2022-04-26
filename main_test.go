@@ -20,8 +20,8 @@ var validate *validator.Validate
 
 // HTTP method constants
 const (
-	get = "GET"
-	post = "POST"
+	get    = "GET"
+	post   = "POST"
 	delete = "DELETE"
 )
 
@@ -130,6 +130,33 @@ func TestGetUserCommunities(t *testing.T) {
 	// Test with invalid user ID
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/users/99999/communities", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	// Test with valid user ID and URL paramater joined=false
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/1/communities?joined=false", nil)
+	router.ServeHTTP(w, req)
+
+	err = json.Unmarshal(w.Body.Bytes(), &communityarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Community structs in the array communityarray
+	for _, community := range communityarray {
+		err = validate.Struct(community)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID and URL paramater joined=false
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/users/99999/communities?joined=false", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
