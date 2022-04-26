@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -369,7 +370,12 @@ func getUser(c *gin.Context) {
 
 	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
 	if err != nil {
-		fmt.Println(err)
+		if err == pgx.ErrNoRows {
+			c.AbortWithStatus(http.StatusNotFound)
+		} else {
+			fmt.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
 
 	c.JSON(http.StatusOK, result)
