@@ -36,7 +36,7 @@ type User struct {
 	Name        string
 	PhoneNumber string
 	Password    string
-	Picture     []byte
+	Picture     string
 	rating      float32
 }
 
