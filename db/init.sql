@@ -50,6 +50,24 @@ CREATE TABLE User_Community (
     fk_community_id INT REFERENCES Community(community_id) NOT NULL
 );
 
+CREATE TABLE Product_Chat(
+    product_chat_id SERIAL PRIMARY KEY,
+    content VARCHAR NOT NULL,
+    sent_date DATE NOT NULL,
+    sent_time TIME NOT NULL,
+    fk_sender_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    fk_reciver_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    fk_product_id INT REFERENCES Product(product_id) ON DELETE CASCADE NOT NULL
+);
+
+CREATE TABLE Community_Chat(
+    community_chat_id SERIAL PRIMARY KEY,
+    content VARCHAR NOT NULL,
+    sent_date DATE NOT NULL,
+    sent_time TIME NOT NULL,
+    fk_sender_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    fk_community_id INT REFERENCES Community(community_id) ON DELETE CASCADE NOT NULL
+);
 
 
 INSERT INTO Users (name, phone_nr, password,rating) VALUES ('Gustav', '+1 202-918-2132', 'lorem ipsum',3), ('Victor', '+1 202-918-2131', 'lorem ipsum',3), ('Rohat', 123, 'lorem ipsum', 4);
@@ -68,3 +86,6 @@ INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (
     (SELECT community_id from Community where name='Memes'));
 
 INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES (1, 2);
+
+INSERT INTO Product_Chat(content, sent_date, sent_time, fk_sender_id, fk_reciver_id, fk_product_id) VALUES ('Får man köpa?','2022-04-07','22:01:29',2,1,1),('Ja absolut!','2022-04-07','22:02:19',1,2,1);
+INSERT INTO Community_Chat(content, sent_date, sent_time, fk_sender_id, fk_community_id) VALUES ('Har ni skrivit på rapporten?','2022-04-07','22:01:29',2,1),('Ja absolut!','2022-04-07','22:03:15',1,1);
