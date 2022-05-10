@@ -37,7 +37,7 @@ type User struct {
 	PhoneNumber string
 	Password    string
 	Picture     []byte
-	rating      float32
+	Rating      float32
 }
 
 type UserCommunity struct {
@@ -152,6 +152,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:userid/reviews", createReview)
         users.POST("/:userid/communities", joinCommunity)
 		users.DELETE("/:userid", deleteUser)
+		users.PUT("/:userid", updateUser)
 
 	}
 
@@ -163,8 +164,12 @@ func setupRouter() *gin.Engine {
 	products := router.Group("/products")
 	{
 		products.GET("/:productid", getProduct)
+		products.DELETE("/:productid", deleteProduct)
+		products.PUT("/:productid", updateProduct)
 	}
 	router.POST("/login", login)
+
+	router.POST("users/:userid/followers", createFollow)
 
 	return router
 }
@@ -230,6 +235,28 @@ func createReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, review)
+}
+
+func createFollow(c *gin.Context) {
+    type Follow struct {
+        following int
+        followed  int
+    }
+    var follow Follow
+
+    if err := c.BindJSON(&follow); err != nil {
+        c.JSON(http.StatusInternalServerError, false)
+        return
+    }
+
+    query := "INSERT INTO User_Followers(fk_user_id, fk_followerid) VALUES($1,$2)"
+    _, err := dbPool.Exec(c, query, follow.following, follow.followed)
+
+    if err != nil {
+        fmt.Println(err)
+    }
+
+    c.JSON(http.StatusOK, true)
 }
 
 func joinCommunity(c *gin.Context) {
@@ -382,7 +409,7 @@ func getUserFollowers(c *gin.Context) {
 	for rows.Next() {
 		var follower User
 
-		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.rating)
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.Rating)
 		if err != nil {
 			panic(err)
 		}
@@ -495,4 +522,55 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func deleteProduct(c* gin.Context){
+	productId := c.Param("productid")
+
+	query := "DELETE FROM Product WHERE product_id = $1"
+	_, err := dbPool.Exec(c, query, productId)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
+func updateProduct(c *gin.Context){
+	var product Product
+	productid := c.Param("productid")
+	if err := c.BindJSON(&product); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	query := "UPDATE Product SET name = $2, service = $3, price = $4, upload_date = $5, description = $6 WHERE product_id = $1"
+	_, err := dbPool.Exec(c, query, productid, product.Name, product.Service, product.Price, product.UploadDate, product.Description)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	c.JSON(http.StatusCreated, product)
+}
+
+func updateUser(c *gin.Context){
+	var user User
+	userid:= c.Param("userid")
+	if err := c.BindJSON(&user); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	query := "UPDATE Users SET name = $2, phone_nr = $3, password = $4, img = $5, rating = $6 WHERE user_id = $1"
+	_, err := dbPool.Exec(c, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
 }
