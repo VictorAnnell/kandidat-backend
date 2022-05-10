@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Create the JWT key used to create the signature
+// Create the JWT key used to create the signature€
 var jwtKey = []byte("my_secret_key")
 
 var (
@@ -39,7 +38,7 @@ type User struct {
 	PhoneNumber string
 	Password    []byte
 	Picture     []byte
-	rating      float32
+	Rating      float32
 }
 
 // Review struct for the database table Review.
@@ -143,7 +142,8 @@ func setupRouter() *gin.Engine {
 	router.POST("/product/add", createProduct)
 	router.GET("/communities", getCommunities)
 	router.GET("/users/:userid", getUser)
-	router.DELETE("/users/:userid", delUser)
+	router.GET("/users/:userid/pinned", getPinnedProducts)
+	router.POST("/users/:userid/pinned", addPinnedProducts)
 	router.GET("/users/:userid/communities", getUserCommunities)
 	router.GET("/users/:userid/followers", getUserFollowers)
 	router.GET("/products/:productid", getProductID)
@@ -165,6 +165,58 @@ func testDB() {
 	}
 
 	fmt.Println(greeting)
+}
+
+func addPinnedProducts(c *gin.Context) {
+	type pinned struct {
+		Productid int
+	}
+
+	var productid pinned
+
+	user := c.Param("userid")
+
+	if err := c.BindJSON(&productid); err != nil {
+		c.JSON(http.StatusInternalServerError, "hej")
+		return
+	}
+
+	query := "INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, productid.Productid, user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, "hallå")
+		return
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
+// Get the products that userid has pinned
+
+func getPinnedProducts(c *gin.Context) {
+	user := c.Param("userid")
+	query := "SELECT * from Product WHERE product_id IN (SELECT fk_product_id FROM PinnedProduct WHERE fk_user_id = $1)"
+	rows, err := dbPool.Query(c, query, user)
+
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var pinnedProducts []Product
+
+	for rows.Next() {
+		var product Product
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+
+		if err != nil {
+			panic(err)
+		}
+
+		pinnedProducts = append(pinnedProducts, product)
+	}
+	c.JSON(http.StatusOK, pinnedProducts)
 }
 
 // Gives you all products that are owned by userId
@@ -223,15 +275,8 @@ func createProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, true)
 }
 
-type ReviewRequestBody struct {
-	Rating     int
-	Content    string
-	ReviewerID int
-	OwnerID    int
-}
-
 func createReview(c *gin.Context) {
-	var requestBody ReviewRequestBody
+	var requestBody Review
 
 	if err := c.BindJSON(&requestBody); err != nil {
 		c.JSON(http.StatusInternalServerError, false)
@@ -245,6 +290,14 @@ func createReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, true)
+
+	queryUpdaterating := "UPDATE Users SET rating = (SELECT AVG(rating) FROM Review WHERE fk_owner_id = $1) WHERE user_id = $1"
+
+	_, er := dbPool.Exec(c, queryUpdaterating, requestBody.OwnerID)
+
+	if er != nil {
+		c.JSON(http.StatusInternalServerError, false)
+	}
 }
 
 func getReviews(c *gin.Context) {
@@ -300,6 +353,7 @@ func getCommunities(c *gin.Context) {
 }
 
 // getUserCommunities returns all communities the user is in.
+
 func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
@@ -339,9 +393,9 @@ func getUser(c *gin.Context) {
 	var result User
 
 	user := c.Param("userid")
-	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64') from Users WHERE user_id = $1"
+	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64'), rating from Users WHERE user_id = $1"
 
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
+	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture, &result.Rating)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -382,7 +436,7 @@ func getUserFollowers(c *gin.Context) {
 	for rows.Next() {
 		var follower User
 
-		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.rating)
+		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.Rating)
 		if err != nil {
 			panic(err)
 		}
@@ -418,27 +472,6 @@ func createUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
-}
-
-func delUser(c *gin.Context) {
-	user := c.Param("userid")
-	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
-	_, err := dbPool.Exec(c, fkQuery, user)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	query := "DELETE FROM Users where user_id = $1"
-	_, err = dbPool.Exec(c, query, user)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	c.Status(http.StatusOK)
 }
 
 // login logs in the user with the given credentials.
