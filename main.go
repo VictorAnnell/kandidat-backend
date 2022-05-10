@@ -175,7 +175,12 @@ func setupRouter() *gin.Engine {
 // Gives you all products that are owned by userId
 func getUserProducts(c *gin.Context) {
 	user := c.Param("userid")
-	query := "SELECT * from Product WHERE fk_user_id = $1"
+	owned := c.DefaultQuery("owned", "true")
+    if owned == "false" {
+        query := "SELECT * from Product WHERE fk_user_id != $1"
+    } else {
+        query := "SELECT * from Product WHERE fk_user_id = $1"
+    }
 	rows, err := dbPool.Query(c, query, user)
 
 	if err != nil {
@@ -351,7 +356,7 @@ func getProducts(c *gin.Context) {
 }
 
 // getUserCommunities returns all communities the user is in.
-func getUserCommunities(c *gin.Context) {
+fun
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
 
