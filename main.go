@@ -36,7 +36,7 @@ type User struct {
 	Name        string
 	PhoneNumber string
 	Password    string
-	Picture     string
+	Picture     []byte
 	rating      float32
 }
 
@@ -176,11 +176,12 @@ func setupRouter() *gin.Engine {
 func getUserProducts(c *gin.Context) {
 	user := c.Param("userid")
 	owned := c.DefaultQuery("owned", "true")
-    if owned == "false" {
-        query := "SELECT * from Product WHERE fk_user_id != $1"
-    } else {
-        query := "SELECT * from Product WHERE fk_user_id = $1"
-    }
+	var query string
+	if owned == "false" {
+		query = "SELECT product_id, name, service, price, upload_date, description, encode(img, 'base64'), fk_user_id from Product WHERE fk_user_id != $1"
+	} else {
+		query = "SELECT product_id, name, service, price, upload_date, description, encode(img, 'base64'), fk_user_id from Product WHERE fk_user_id = $1"
+	}
 	rows, err := dbPool.Query(c, query, user)
 
 	if err != nil {
@@ -356,7 +357,7 @@ func getProducts(c *gin.Context) {
 }
 
 // getUserCommunities returns all communities the user is in.
-fun
+func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
 

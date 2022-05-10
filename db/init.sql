@@ -3,7 +3,7 @@ CREATE TABLE Users(
     name VARCHAR NOT NULL,
     phone_nr VARCHAR NOT NULL UNIQUE,
     password VARCHAR NOT NULL,
-    img VARCHAR,
+    img bytea,
     rating real
 );
 
