@@ -61,6 +61,7 @@ type Product struct {
 	Price       int
 	UploadDate  pgtype.Date
 	Description string
+	Picture     []byte
 	UserID      int
 }
 
@@ -186,7 +187,7 @@ func getUserProducts(c *gin.Context) {
 
 	for rows.Next() {
 		var product Product
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.Picture, &product.UserID)
 
 		if err != nil {
 			panic(err)
@@ -202,15 +203,15 @@ func createProduct(c *gin.Context) {
 	var product Product
 	user := c.Param("userid")
 	if err := c.BindJSON(&product); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.JSON(http.StatusInternalServerError, 0)
 		return
 	}
 
-	query := "INSERT INTO Product(name,service,price,upload_date,description,fk_user_id) VALUES($1,$2,$3,$4,$5,$6)"
-	_, err := dbPool.Exec(c, query, product.Name, product.Service, product.Price, product.UploadDate, product.Description, user)
+	query := "INSERT INTO Product(name,service,price,upload_date,description,img,fk_user_id) VALUES($1,$2,$3,$4,$5,$6,$7)"
+	_, err := dbPool.Exec(c, query, product.Name, product.Service, product.Price, product.UploadDate, product.Description, product.Picture, user)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -303,7 +304,7 @@ func getCommunities(c *gin.Context) {
 }
 
 func getProducts(c *gin.Context) {
-	query := "SELECT * FROM Product"
+	query := "SELECT product_id, name, service, price, upload_date, description, encode(img, 'base64'), fk_user_id FROM Product"
 	rows, err := dbPool.Query(c, query)
 
 	if err != nil {
@@ -317,7 +318,7 @@ func getProducts(c *gin.Context) {
 	for rows.Next() {
 		var product Product
 
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.Picture, &product.UserID)
 		if err != nil {
 			panic(err)
 		}
@@ -409,9 +410,9 @@ func getProduct(c *gin.Context) {
 	var result Product
 
 	productID := c.Param("productid")
-	query := "SELECT * FROM Product WHERE product_id = $1"
+	query := "SELECT product_id, name, service, price, upload_date, description, encode(img, 'base64'), fk_user_id FROM Product WHERE product_id = $1"
 
-	err := dbPool.QueryRow(c, query, productID).Scan(&result.ProductID, &result.Name, &result.Service, &result.Price, &result.UploadDate, &result.Description, &result.UserID)
+	err := dbPool.QueryRow(c, query, productID).Scan(&result.ProductID, &result.Name, &result.Service, &result.Price, &result.UploadDate, &result.Description, &result.Picture, &result.UserID)
 	if err != nil {
 		c.Status(http.StatusNotFound)
 		return

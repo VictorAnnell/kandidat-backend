@@ -20,6 +20,7 @@ CREATE TABLE Product (
     price INT NOT NULL,
     upload_date DATE NOT NULL,
     description VARCHAR,
+    img bytea,
     fk_user_id INT REFERENCES Users(user_id) NOT NULL
 );
 
