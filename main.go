@@ -179,7 +179,9 @@ func getUserProducts(c *gin.Context) {
 	rows, err := dbPool.Query(c, query, user)
 
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
 	defer rows.Close()
 
@@ -190,7 +192,9 @@ func getUserProducts(c *gin.Context) {
 		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.Picture, &product.UserID)
 
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		products = append(products, product)
@@ -203,7 +207,8 @@ func createProduct(c *gin.Context) {
 	var product Product
 	user := c.Param("userid")
 	if err := c.BindJSON(&product); err != nil {
-		c.JSON(http.StatusInternalServerError, 0)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -211,7 +216,8 @@ func createProduct(c *gin.Context) {
 	_, err := dbPool.Exec(c, query, product.Name, product.Service, product.Price, product.UploadDate, product.Description, product.Picture, user)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -222,14 +228,16 @@ func createReview(c *gin.Context) {
 	var review Review
 	owner := c.Param("userid")
 	if err := c.BindJSON(&review); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	query := "INSERT INTO Review(rating,content, fk_reviewer_id, fk_owner_id) VALUES($1,$2, $3, $4)"
 	_, err := dbPool.Exec(c, query, review.Rating, review.Content, review.ReviewerID, owner)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	c.JSON(http.StatusCreated, review)
@@ -239,20 +247,28 @@ func joinCommunity(c *gin.Context) {
 	var userCommunity UserCommunity
 	user := c.Param("userid")
 	if err := c.BindJSON(&userCommunity); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2)"
 	_, err := dbPool.Exec(c, query, user, userCommunity.CommunityID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 	}
 	c.JSON(http.StatusCreated, userCommunity)
 }
 
 func getUserReviews(c *gin.Context) {
 	user := c.Param("userid")
+
+	if checkUserExist(c, user) == false {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
 	query := "SELECT * from Review WHERE fk_owner_id = $1"
 	rows, err := dbPool.Query(c, query, user)
 
@@ -281,6 +297,7 @@ func getCommunities(c *gin.Context) {
 	rows, err := dbPool.Query(c, query)
 
 	if err != nil {
+		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -308,7 +325,9 @@ func getProducts(c *gin.Context) {
 	rows, err := dbPool.Query(c, query)
 
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	defer rows.Close()
@@ -320,7 +339,9 @@ func getProducts(c *gin.Context) {
 
 		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.Picture, &product.UserID)
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		products = append(products, product)
@@ -334,22 +355,12 @@ func getUserCommunities(c *gin.Context) {
 	user := c.Param("userid")
 	joined := c.DefaultQuery("joined", "true")
 
-	var query string
-	// Check if user exist
-	var result User
-	query = "SELECT user_id from Users WHERE user_id = $1"
-
-	err := dbPool.QueryRow(c, query, user).Scan(&result.UserID)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			c.Status(http.StatusNotFound)
-			return
-		} else {
-			fmt.Println(err)
-			c.Status(http.StatusInternalServerError)
-			return
-		}
+	if checkUserExist(c, user) == false {
+		c.Status(http.StatusNotFound)
+		return
 	}
+
+	var query string
 
 	if joined == "false" {
 		query = " SELECT * from Community WHERE community_id NOT IN (SELECT fk_community_id FROM User_Community WHERE fk_user_id = $1)"
@@ -359,7 +370,7 @@ func getUserCommunities(c *gin.Context) {
 
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -373,6 +384,7 @@ func getUserCommunities(c *gin.Context) {
 
 		err := rows.Scan(&community.CommunityID, &community.Name)
 		if err != nil {
+			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -430,6 +442,7 @@ func getUserFollowers(c *gin.Context) {
 
 	rows, err := dbPool.Query(c, query, user)
 	if err != nil {
+		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -443,6 +456,7 @@ func getUserFollowers(c *gin.Context) {
 
 		err := rows.Scan(&follower.UserID, &follower.Name, &follower.PhoneNumber, &follower.Password, &follower.Picture, &follower.rating)
 		if err != nil {
+			fmt.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -466,7 +480,8 @@ func createUser(c *gin.Context) {
 	var user User
 
 	if err := c.BindJSON(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -487,7 +502,7 @@ func deleteUser(c *gin.Context) {
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	query := "DELETE FROM Users where user_id = $1"
@@ -495,7 +510,7 @@ func deleteUser(c *gin.Context) {
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	c.Status(http.StatusOK)
@@ -517,7 +532,8 @@ func login(c *gin.Context) {
 	var id int
 
 	if err := c.BindJSON(&result); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -527,11 +543,11 @@ func login(c *gin.Context) {
 	err := dbPool.QueryRow(c, query, result.PhoneNumber).Scan(&result.Password, &id)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	if password != result.Password {
-		c.JSON(http.StatusBadGateway, false)
+		c.Status(http.StatusBadGateway)
 		return
 	}
 
@@ -548,6 +564,23 @@ func login(c *gin.Context) {
 	response.Token = tokenString
 
 	c.JSON(http.StatusOK, response)
+}
+
+// checkUserExist is a helper function that checks if a user with the given id exists in the database.
+func checkUserExist(c *gin.Context, userid string) bool {
+	query := "SELECT user_id, name, phone_nr, password, encode(img, 'base64') from Users WHERE user_id = $1"
+
+	var result User
+	err := dbPool.QueryRow(c, query, userid).Scan(&result.UserID, &result.Name, &result.PhoneNumber, &result.Password, &result.Picture)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false
+		} else {
+			fmt.Println(err)
+			return false
+		}
+	}
+	return true
 }
 
 // main is the entry point for the application.
