@@ -72,12 +72,12 @@ CREATE TABLE Community_Chat(
 
 INSERT INTO Users (name, phone_nr, password,rating) VALUES ('Gustav', '+1 202-918-2132', 'lorem ipsum',3), ('Victor', '+1 202-918-2131', 'lorem ipsum',3), ('Rohat', 123, 'lorem ipsum', 4);
 INSERT INTO Users (name, phone_nr, password, img,rating) VALUES ('Victor Kill', 123, 'lorem ipsum', pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg')::bytea, 2);
-INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa','true',1,'2022-04-07','Hej',1),('Soffa','false',2,'2022-04-07','Hej',1);
+INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa','true',1,'2022-04-07','Hej',1),('Soffa','false',2,'2022-04-07','Hej',1),('Halsduk','false',2,'2022-04-07','Hej',1);
 INSERT INTO Review (rating,content, fk_reviwer_id, fk_owner_id) VALUES (2,'SÄMST',1,1),(3,'SÄMRE',2,2);
 INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 INSERT INTO Product (name, service, price, upload_date, description, fk_user_id) VALUES ('Rosa soffa', False, 200, '2022-02-02', 
 'A nice couch', 1);
-INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1);
+INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1),(2,1),(3,1);
 
 
 
