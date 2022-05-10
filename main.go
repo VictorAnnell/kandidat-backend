@@ -541,7 +541,7 @@ func updateProduct(c *gin.Context){
 	var product Product
 	productid := c.Param("productid")
 	if err := c.BindJSON(&product); err != nil {
-		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -549,7 +549,7 @@ func updateProduct(c *gin.Context){
 	_, err := dbPool.Exec(c, query, productid, product.Name, product.Service, product.Price, product.UploadDate, product.Description)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -560,7 +560,7 @@ func updateUser(c *gin.Context){
 	var user User
 	userid:= c.Param("userid")
 	if err := c.BindJSON(&user); err != nil {
-		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -568,7 +568,7 @@ func updateUser(c *gin.Context){
 	_, err := dbPool.Exec(c, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
