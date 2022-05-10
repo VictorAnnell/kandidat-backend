@@ -76,6 +76,29 @@ func TestGetCommunities(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+func TestGetProducts(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/products", nil)
+	router.ServeHTTP(w, req)
+
+	var productarray []Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &productarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Community structs in the array communityarray
+	for _, product := range productarray {
+		err = validate.Struct(product)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestGetUser(t *testing.T) {
 	// Test with valid user ID
 	w := httptest.NewRecorder()
@@ -222,7 +245,7 @@ func TestGetProduct(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
-func TestUserGetReviews(t *testing.T) {
+func TestGetUserReviews(t *testing.T) {
 	// Test with valid user ID
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1/reviews", nil)
