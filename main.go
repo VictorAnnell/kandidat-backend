@@ -151,12 +151,13 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/followers", getUserFollowers)
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
+		users.GET("/:user_id/pinned", getPinnedProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
+		users.POST("/:user_id/pinned", addPinnedProducts)
 		users.DELETE("/:user_id", deleteUser)
-
 	}
 
 	communities := router.Group("/communities")
@@ -170,8 +171,60 @@ func setupRouter() *gin.Engine {
 		products.GET("/:product_id", getProduct)
 	}
 	router.POST("/login", login)
+	router.POST("/User_Followers/follow", createFollow)
 
 	return router
+}
+
+func addPinnedProducts(c *gin.Context) {
+	type pinned struct {
+		Productid int
+	}
+
+	var productid pinned
+
+	user := c.Param("userid")
+
+	if err := c.BindJSON(&productid); err != nil {
+		c.JSON(http.StatusInternalServerError, "hej")
+		return
+	}
+
+	query := "INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, productid.Productid, user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, "hallå")
+		return
+	}
+
+	c.JSON(http.StatusOK, true)
+}
+
+// Get the products that userid has pinned
+func getPinnedProducts(c *gin.Context) {
+	user := c.Param("userid")
+	query := "SELECT * from Product WHERE product_id IN (SELECT fk_product_id FROM PinnedProduct WHERE fk_user_id = $1)"
+	rows, err := dbPool.Query(c, query, user)
+
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	var pinnedProducts []Product
+
+	for rows.Next() {
+		var product Product
+		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
+
+		if err != nil {
+			panic(err)
+		}
+
+		pinnedProducts = append(pinnedProducts, product)
+	}
+	c.JSON(http.StatusOK, pinnedProducts)
 }
 
 // Gives you all products that are owned by userId
@@ -259,6 +312,14 @@ func createReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, review)
+
+	query = "UPDATE Users SET rating = (SELECT AVG(rating) FROM Review WHERE fk_owner_id = $1) WHERE user_id = $1"
+
+	_, er := dbPool.Exec(c, query, review.OwnerID)
+	if er != nil {
+		fmt.Println(er)
+		c.Error(err)
+	}
 }
 
 func joinCommunity(c *gin.Context) {
@@ -342,6 +403,7 @@ func getProducts(c *gin.Context) {
 }
 
 // getUserCommunities returns all communities the user is in.
+
 func getUserCommunities(c *gin.Context) {
 	user := c.Param("user_id")
 	joined := c.DefaultQuery("joined", "true")
@@ -567,8 +629,29 @@ func main() {
 
 	router := setupRouter()
 	err := router.Run(serverURL)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func createFollow(c *gin.Context) {
+	type Follow struct {
+		following int
+		followed  int
+	}
+	var follow Follow
+
+	if err := c.BindJSON(&follow); err != nil {
+		c.JSON(http.StatusInternalServerError, false)
+		return
+	}
+
+	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, follow.following, follow.followed)
 
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	c.JSON(http.StatusOK, true)
 }
