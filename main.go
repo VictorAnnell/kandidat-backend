@@ -33,7 +33,7 @@ type Community struct {
 
 // User struct for the database table User.
 type User struct {
-	UserID      int      `json:"userid"`
+	UserID      int      `json:"user_id"`
 	Name        string   `json:"name" binding:"required"`
 	PhoneNumber string   `json:"phone_number" db:"phone_number" binding:"required,e164"`
 	Password    string   `json:"password" binding:"required"`
@@ -42,7 +42,8 @@ type User struct {
 }
 
 type UserCommunity struct {
-	CommunityID int `json:"community_id"`
+	CommunityID int `json:"community_id" binding:"required" db:"fk_community_id"`
+	UserID      int `json:"user_id" db:"fk_user_id"`
 }
 
 // Review struct for the database table Review.
@@ -145,16 +146,16 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	users := router.Group("/users")
 	{
-		users.GET("/:userid", getUser)
-		users.GET("/:userid/communities", getUserCommunities)
-		users.GET("/:userid/followers", getUserFollowers)
-		users.GET("/:userid/products", getUserProducts)
-		users.GET("/:userid/reviews", getUserReviews)
+		users.GET("/:user_id", getUser)
+		users.GET("/:user_id/communities", getUserCommunities)
+		users.GET("/:user_id/followers", getUserFollowers)
+		users.GET("/:user_id/products", getUserProducts)
+		users.GET("/:user_id/reviews", getUserReviews)
 		users.POST("", createUser)
-		users.POST("/:userid/products", createProduct)
-		users.POST("/:userid/reviews", createReview)
-		users.POST("/:userid/communities", joinCommunity)
-		users.DELETE("/:userid", deleteUser)
+		users.POST("/:user_id/products", createProduct)
+		users.POST("/:user_id/reviews", createReview)
+		users.POST("/:user_id/communities", joinCommunity)
+		users.DELETE("/:user_id", deleteUser)
 
 	}
 
@@ -166,7 +167,7 @@ func setupRouter() *gin.Engine {
 	products := router.Group("/products")
 	{
 		products.GET("", getProducts)
-		products.GET("/:productid", getProduct)
+		products.GET("/:product_id", getProduct)
 	}
 	router.POST("/login", login)
 
@@ -175,7 +176,7 @@ func setupRouter() *gin.Engine {
 
 // Gives you all products that are owned by userId
 func getUserProducts(c *gin.Context) {
-	user := c.Param("userid")
+	user := c.Param("user_id")
 	owned := c.DefaultQuery("owned", "true")
 
 	if checkUserExist(c, user) == false {
@@ -205,7 +206,7 @@ func getUserProducts(c *gin.Context) {
 // Adds a product to the userID
 func createProduct(c *gin.Context) {
 	var product Product
-	userID := c.Param("userid")
+	userID := c.Param("user_id")
 
 	if checkUserExist(c, userID) == false {
 		c.Status(http.StatusNotFound)
@@ -235,7 +236,7 @@ func createProduct(c *gin.Context) {
 
 func createReview(c *gin.Context) {
 	var review Review
-	owner := c.Param("userid")
+	owner := c.Param("user_id")
 
 	if checkUserExist(c, owner) == false {
 		c.Status(http.StatusNotFound)
@@ -262,24 +263,33 @@ func createReview(c *gin.Context) {
 
 func joinCommunity(c *gin.Context) {
 	var userCommunity UserCommunity
-	user := c.Param("userid")
-	if err := c.Bind(&userCommunity); err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusInternalServerError)
+	user := c.Param("user_id")
+
+	if checkUserExist(c, user) == false {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2)"
-	_, err := dbPool.Exec(c, query, user, userCommunity.CommunityID)
+	err := c.Bind(&userCommunity)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	query := "INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES($1, $2) RETURNING fk_user_id, fk_community_id"
+	err = pgxscan.Get(c, dbPool, &userCommunity, query, user, userCommunity.CommunityID)
 
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+		return
 	}
+
 	c.JSON(http.StatusCreated, userCommunity)
 }
 
 func getUserReviews(c *gin.Context) {
-	user := c.Param("userid")
+	user := c.Param("user_id")
 
 	if checkUserExist(c, user) == false {
 		c.Status(http.StatusNotFound)
@@ -317,7 +327,7 @@ func getCommunities(c *gin.Context) {
 
 func getProducts(c *gin.Context) {
 	var products []*Product
-	query := "SELECT product_id, name, service, price, upload_date, description, picture, fk_user_id FROM Product"
+	query := "SELECT * FROM Product"
 
 	err := pgxscan.Select(c, dbPool, &products, query)
 
@@ -332,7 +342,7 @@ func getProducts(c *gin.Context) {
 
 // getUserCommunities returns all communities the user is in.
 func getUserCommunities(c *gin.Context) {
-	user := c.Param("userid")
+	user := c.Param("user_id")
 	joined := c.DefaultQuery("joined", "true")
 
 	if checkUserExist(c, user) == false {
@@ -363,7 +373,7 @@ func getUserCommunities(c *gin.Context) {
 func getUser(c *gin.Context) {
 	var result User
 
-	user := c.Param("userid")
+	user := c.Param("user_id")
 	query := "SELECT * from Users WHERE user_id = $1"
 
 	err := pgxscan.Get(c, dbPool, &result, query, user)
@@ -385,7 +395,7 @@ func getUser(c *gin.Context) {
 func getProduct(c *gin.Context) {
 	var result Product
 
-	productID := c.Param("productid")
+	productID := c.Param("product_id")
 	query := "SELECT * FROM Product WHERE product_id = $1"
 
 	err := pgxscan.Get(c, dbPool, &result, query, productID)
@@ -405,7 +415,7 @@ func getProduct(c *gin.Context) {
 
 // getUserFollowers returns all users that follow the user with the given id.
 func getUserFollowers(c *gin.Context) {
-	user := c.Param("userid")
+	user := c.Param("user_id")
 
 	if checkUserExist(c, user) == false {
 		c.Status(http.StatusNotFound)
@@ -452,7 +462,7 @@ func createUser(c *gin.Context) {
 }
 
 func deleteUser(c *gin.Context) {
-	user := c.Param("userid")
+	user := c.Param("user_id")
 	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
 	_, err := dbPool.Exec(c, fkQuery, user)
 
@@ -525,11 +535,11 @@ func login(c *gin.Context) {
 }
 
 // checkUserExist is a helper function that checks if a user with the given id exists in the database.
-func checkUserExist(c *gin.Context, userid string) bool {
-	query := "SELECT user_id, name, phone_number, password, picture from Users WHERE user_id = $1"
+func checkUserExist(c *gin.Context, userID string) bool {
+	query := "SELECT * from Users WHERE user_id = $1"
 
 	var result User
-	err := pgxscan.Get(c, dbPool, &result, query, userid)
+	err := pgxscan.Get(c, dbPool, &result, query, userID)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return false

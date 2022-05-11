@@ -432,6 +432,41 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
+func TestJoinCommunity(t *testing.T) {
+	// Test with valid JSON body and valid user ID
+	endpoint := "/users/1/communities"
+	reqBody := `{"community_id": 2}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := Community{}
+	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test decoding of JSON response body
+	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate struct
+	err = validate.Struct(expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	// Test with invalid JSON body and valid user ID
+	endpoint = "/users/1/communities"
+	reqBody = `{"invalid-field-name": 1}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	expectedResponseStruct = Community{}
+	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with valid JSON body and invalid user ID
+	endpoint = "/users/99999/communities"
+	reqBody = `{"community_id": 3}`
+	expectedHTTPStatusCode = http.StatusNotFound
+	expectedResponseStruct = Community{}
+	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+}
+
 // reqTester is a helper function for request testing
 func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string, expectedHTTPStatusCode int) []byte {
 	t.Helper()
