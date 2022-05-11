@@ -305,6 +305,7 @@ func getUserReviews(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	c.JSON(http.StatusOK, reviews)
@@ -463,8 +464,13 @@ func createUser(c *gin.Context) {
 
 func deleteUser(c *gin.Context) {
 	user := c.Param("user_id")
-	fkQuery := "UPDATE Review SET fk_user_id = 0 WHERE fk_user_id = $1"
-	_, err := dbPool.Exec(c, fkQuery, user)
+	if checkUserExist(c, user) == false {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	query := "UPDATE Review SET fk_reviewer_id = 0 WHERE fk_reviewer_id = $1"
+	_, err := dbPool.Exec(c, query, user)
 
 	if err != nil {
 		fmt.Println(err)
@@ -472,8 +478,10 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	query := "DELETE FROM Users where user_id = $1"
-	_, err = dbPool.Exec(c, query, user)
+	query = "DELETE FROM Users where user_id = $1 RETURNING *"
+
+	var deletedUser User
+	err = pgxscan.Get(c, dbPool, &deletedUser, query, user)
 
 	if err != nil {
 		fmt.Println(err)
@@ -481,7 +489,7 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, deletedUser)
 }
 
 // login logs in the user with the given credentials.
@@ -536,7 +544,7 @@ func login(c *gin.Context) {
 
 // checkUserExist is a helper function that checks if a user with the given id exists in the database.
 func checkUserExist(c *gin.Context, userID string) bool {
-	query := "SELECT * from Users WHERE user_id = $1"
+	query := "SELECT user_id from Users WHERE user_id = $1"
 
 	var result User
 	err := pgxscan.Get(c, dbPool, &result, query, userID)
