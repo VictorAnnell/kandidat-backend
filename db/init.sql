@@ -58,12 +58,7 @@ INSERT INTO Users (name, phone_number, password, picture, rating) VALUES ('Gusta
 INSERT INTO USERS (name, phone_number, password, rating) VALUES ('Victor', '+12027455483', 'lorem ipsum', 4);
 
 /* test products product_id = 1 */
-INSERT INTO Product (name,service,price,upload_date,description, fk_user_id ) VALUES ('Soffa','true',1,'2022-04-07','Hej',1),('Soffa','false',2,'2022-04-07','Hej',1);
-INSERT INTO Review (rating,content, fk_reviwer_id, fk_owner_id) VALUES (2,'SÄMST',1,1),(3,'SÄMRE',2,2);
-INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
-INSERT INTO Product (name, service, price, upload_date, description, fk_user_id) VALUES ('Rosa soffa', False, 200, '2022-02-02', 
-'A nice couch', 1);
-INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES (1,1),(2,1),(3,1);
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Soffa','true',1,'Hej',1);
 
 /* test review review_id = 1 */
 INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);
