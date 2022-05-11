@@ -64,6 +64,7 @@ type Review struct {
 type Product struct {
 	ProductID   int         `json:"product_id"`
 	Name        string      `json:"name" binding:"required"`
+	Category    string      `json:"category" binding:"required"`
 	Service     *bool       `json:"service" binding:"required"`
 	Price       int         `json:"price" binding:"required"`
 	UploadDate  pgtype.Date `json:"upload_date"`
@@ -282,8 +283,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
+	query := "INSERT INTO Product(name,category,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Category, product.Service, product.Price, product.Description, product.Picture, userID)
 
 	if err != nil {
 		fmt.Println(err)
