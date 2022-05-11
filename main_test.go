@@ -339,7 +339,7 @@ func TestCreateProduct(t *testing.T) {
 
 	// Test with valid JSON body and invalid user ID
 	endpoint = "/users/99999/products"
-	reqBody = `{"name": "Test Product", "service": false, "price": 1, "description": "Test Description"}`
+	reqBody = `{"name": "Test Product", "category": "Test Category", "service": true, "price": 5, "description": "Test Description"}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Product{}
 
