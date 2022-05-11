@@ -22,9 +22,9 @@ var validate *validator.Validate
 
 // HTTP method constants
 const (
-	get    = "GET"
-	post   = "POST"
-	delete = "DELETE"
+	get  = "GET"
+	post = "POST"
+	del  = "DELETE"
 )
 
 func TestMain(m *testing.M) {
@@ -334,21 +334,24 @@ func TestCreateProduct(t *testing.T) {
 	reqBody = `{"wrong-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`
 	expectedHTTPStatusCode = http.StatusBadRequest
 	expectedResponseStruct = Product{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with valid JSON body and invalid user ID
 	endpoint = "/users/99999/products"
 	reqBody = `{"name": "Test Product", "service": false, "price": 1, "description": "Test Description"}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Product{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with invalid JSON body and invalid user ID
 	endpoint = "/users/99999/products"
 	reqBody = `{"invalid-field-name": "Test Product", "wrong-field-name2": false, "price": "abc", "description": "Test Description"}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Product{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
 
 func TestCreateReview(t *testing.T) {
@@ -376,21 +379,24 @@ func TestCreateReview(t *testing.T) {
 	reqBody = `{"rating": "this should be a number", "description": "Test Description", "reviewer_id": 2}`
 	expectedHTTPStatusCode = http.StatusBadRequest
 	expectedResponseStruct = Review{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with valid JSON body and invalid user ID
 	endpoint = "/users/99999/reviews"
 	reqBody = `{"rating": 1, "description": "Test Description", "reviewer_id": 2}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Review{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with invalid JSON body and invalid user ID
 	endpoint = "/users/99999/reviews"
 	reqBody = `{"rating": "this should be a number", "description": "Test Description", "reviewer_id": 2}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Review{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
 
 func TestCreateUser(t *testing.T) {
@@ -415,7 +421,7 @@ func TestCreateUser(t *testing.T) {
 
 	// Delete the created test user
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(delete, "/users/"+strconv.Itoa(expectedResponseStruct.UserID), nil)
+	req, _ := http.NewRequest(del, "/users/"+strconv.Itoa(expectedResponseStruct.UserID), nil)
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
@@ -455,14 +461,16 @@ func TestJoinCommunity(t *testing.T) {
 	reqBody = `{"invalid-field-name": 1}`
 	expectedHTTPStatusCode = http.StatusBadRequest
 	expectedResponseStruct = Community{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with valid JSON body and invalid user ID
 	endpoint = "/users/99999/communities"
 	reqBody = `{"community_id": 3}`
 	expectedHTTPStatusCode = http.StatusNotFound
 	expectedResponseStruct = Community{}
-	bodyBytes = reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
 
 func TestDeleteUser(t *testing.T) {
@@ -477,6 +485,7 @@ func TestDeleteUser(t *testing.T) {
 		fmt.Println(w.Body.String())
 		fmt.Println(w.Code)
 		t.Error("Failed to create test user to delete")
+
 		return
 	}
 
@@ -492,7 +501,7 @@ func TestDeleteUser(t *testing.T) {
 	endpoint := "/users/" + strconv.Itoa(testUser.UserID)
 	expectedHTTPStatusCode := http.StatusOK
 	expectedResponseStruct := User{}
-	bodyBytes := reqTester(t, delete, endpoint, "", expectedHTTPStatusCode)
+	bodyBytes := reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 
 	// Test decoding of JSON response body
 	err = json.Unmarshal(bodyBytes, &expectedResponseStruct)
@@ -509,12 +518,14 @@ func TestDeleteUser(t *testing.T) {
 	// Test with invalid user ID
 	endpoint = "/users/99999"
 	expectedHTTPStatusCode = http.StatusNotFound
-	bodyBytes = reqTester(t, delete, endpoint, "", expectedHTTPStatusCode)
+
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
 // reqTester is a helper function for request testing
 func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string, expectedHTTPStatusCode int) []byte {
 	t.Helper()
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(httpMethod, endpoint, strings.NewReader(reqBody))
 
@@ -523,8 +534,10 @@ func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string,
 	}
 
 	router.ServeHTTP(w, req)
+
 	if !assert.Equal(t, expectedHTTPStatusCode, w.Code) {
 		fmt.Println("Returned response: " + w.Body.String())
 	}
+
 	return w.Body.Bytes()
 }

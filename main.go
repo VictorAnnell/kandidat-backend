@@ -25,6 +25,11 @@ var (
 	databaseURL string
 )
 
+// Reused constants
+const (
+	ErrNoRows = "no rows in result set"
+)
+
 // Community struct for the database table Community.
 type Community struct {
 	CommunityID int    `json:"community_id"`
@@ -245,11 +250,13 @@ func getUserProducts(c *gin.Context) {
 	} else {
 		query = "SELECT * from Product WHERE fk_user_id = $1"
 	}
+
 	err := pgxscan.Select(c, dbPool, &products, query, user)
 
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -259,8 +266,8 @@ func getUserProducts(c *gin.Context) {
 // Adds a product to the userID
 func createProduct(c *gin.Context) {
 	var product Product
-	userID := c.Param("user_id")
 
+	userID := c.Param("user_id")
 	if checkUserExist(c, userID) == false {
 		c.Status(http.StatusNotFound)
 		return
@@ -281,6 +288,7 @@ func createProduct(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -289,8 +297,8 @@ func createProduct(c *gin.Context) {
 
 func createReview(c *gin.Context) {
 	var review Review
-	owner := c.Param("user_id")
 
+	owner := c.Param("user_id")
 	if checkUserExist(c, owner) == false {
 		c.Status(http.StatusNotFound)
 		return
@@ -308,6 +316,7 @@ func createReview(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -318,14 +327,14 @@ func createReview(c *gin.Context) {
 	_, er := dbPool.Exec(c, query, review.OwnerID)
 	if er != nil {
 		fmt.Println(er)
-		c.Error(err)
+		c.JSON(http.StatusInternalServerError, review)
 	}
 }
 
 func joinCommunity(c *gin.Context) {
 	var userCommunity UserCommunity
-	user := c.Param("user_id")
 
+	user := c.Param("user_id")
 	if checkUserExist(c, user) == false {
 		c.Status(http.StatusNotFound)
 		return
@@ -343,6 +352,7 @@ func joinCommunity(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -366,6 +376,7 @@ func getUserReviews(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -381,6 +392,7 @@ func getCommunities(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -389,13 +401,14 @@ func getCommunities(c *gin.Context) {
 
 func getProducts(c *gin.Context) {
 	var products []*Product
-	query := "SELECT * FROM Product"
 
+	query := "SELECT * FROM Product"
 	err := pgxscan.Select(c, dbPool, &products, query)
 
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -414,6 +427,7 @@ func getUserCommunities(c *gin.Context) {
 	}
 
 	var query string
+
 	var communities []*Community
 
 	if joined == "false" {
@@ -426,6 +440,7 @@ func getUserCommunities(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -441,14 +456,15 @@ func getUser(c *gin.Context) {
 
 	err := pgxscan.Get(c, dbPool, &result, query, user)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
+		if err.Error() == ErrNoRows {
 			c.Status(http.StatusNotFound)
 			return
-		} else {
-			fmt.Println(err)
-			c.Status(http.StatusInternalServerError)
-			return
 		}
+
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -463,14 +479,15 @@ func getProduct(c *gin.Context) {
 
 	err := pgxscan.Get(c, dbPool, &result, query, productID)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
+		if err.Error() == ErrNoRows {
 			c.Status(http.StatusNotFound)
 			return
-		} else {
-			fmt.Println(err)
-			c.Status(http.StatusInternalServerError)
-			return
 		}
+
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -493,6 +510,7 @@ func getUserFollowers(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -518,6 +536,7 @@ func createUser(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -537,6 +556,7 @@ func deleteUser(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -548,6 +568,7 @@ func deleteUser(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -567,11 +588,13 @@ func login(c *gin.Context) {
 	}
 
 	var result LoginUser
+
 	var id int
 
 	if err := c.Bind(&result); err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -609,14 +632,12 @@ func checkUserExist(c *gin.Context, userID string) bool {
 	query := "SELECT user_id from Users WHERE user_id = $1"
 
 	var result User
+
 	err := pgxscan.Get(c, dbPool, &result, query, userID)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return false
-		} else {
-			return false
-		}
+		return false
 	}
+
 	return true
 }
 
@@ -628,6 +649,7 @@ func main() {
 	defer dbPool.Close()
 
 	router := setupRouter()
+
 	err := router.Run(serverURL)
 	if err != nil {
 		fmt.Println(err)
@@ -639,6 +661,7 @@ func createFollow(c *gin.Context) {
 		following int
 		followed  int
 	}
+
 	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
