@@ -182,53 +182,63 @@ func setupRouter() *gin.Engine {
 }
 
 func addPinnedProducts(c *gin.Context) {
-	type pinned struct {
-		Productid int
-	}
+	user := c.Param("user_id")
 
-	var productid pinned
-
-	user := c.Param("userid")
-
-	if err := c.BindJSON(&productid); err != nil {
-		c.JSON(http.StatusInternalServerError, "hej")
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
-	query := "INSERT INTO PinnedProduct (fk_product_id, fk_user_id) VALUES($1,$2)"
-	_, err := dbPool.Exec(c, query, productid.Productid, user)
+	type pinnedProduct struct {
+		ProductID int `json:"product_id" binding:"required" db:"fk_product_id"`
+	}
+
+	var product pinnedProduct
+
+	err := c.Bind(&product)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if checkIfProductExist(c, product.ProductID) == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Product does not exist"})
+		return
+	}
+
+	query := "INSERT INTO Pinned_Product (fk_product_id, fk_user_id) VALUES($1,$2) RETURNING fk_product_id"
+	err = pgxscan.Get(c, dbPool, &product, query, product.ProductID, user)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, "hallå")
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
-	c.JSON(http.StatusOK, true)
+	c.JSON(http.StatusCreated, product)
 }
 
 // Get the products that userid has pinned
 func getPinnedProducts(c *gin.Context) {
-	user := c.Param("userid")
-	query := "SELECT * from Product WHERE product_id IN (SELECT fk_product_id FROM PinnedProduct WHERE fk_user_id = $1)"
-	rows, err := dbPool.Query(c, query, user)
+	user := c.Param("user_id")
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	var pinnedProducts []*Product
+
+	query := "SELECT * from Product WHERE product_id IN (SELECT fk_product_id FROM Pinned_Product WHERE fk_user_id = $1)"
+	err := pgxscan.Select(c, dbPool, &pinnedProducts, query, user)
 
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
 	}
-	defer rows.Close()
 
-	var pinnedProducts []Product
-
-	for rows.Next() {
-		var product Product
-		err := rows.Scan(&product.ProductID, &product.Name, &product.Service, &product.Price, &product.UploadDate, &product.Description, &product.UserID)
-
-		if err != nil {
-			panic(err)
-		}
-
-		pinnedProducts = append(pinnedProducts, product)
-	}
 	c.JSON(http.StatusOK, pinnedProducts)
 }
 
@@ -237,8 +247,8 @@ func getUserProducts(c *gin.Context) {
 	user := c.Param("user_id")
 	owned := c.DefaultQuery("owned", "true")
 
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -268,8 +278,8 @@ func createProduct(c *gin.Context) {
 	var product Product
 
 	userID := c.Param("user_id")
-	if checkUserExist(c, userID) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, userID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -299,8 +309,8 @@ func createReview(c *gin.Context) {
 	var review Review
 
 	owner := c.Param("user_id")
-	if checkUserExist(c, owner) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, owner) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -335,8 +345,8 @@ func joinCommunity(c *gin.Context) {
 	var userCommunity UserCommunity
 
 	user := c.Param("user_id")
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -362,8 +372,8 @@ func joinCommunity(c *gin.Context) {
 func getUserReviews(c *gin.Context) {
 	user := c.Param("user_id")
 
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -421,8 +431,8 @@ func getUserCommunities(c *gin.Context) {
 	user := c.Param("user_id")
 	joined := c.DefaultQuery("joined", "true")
 
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -497,8 +507,8 @@ func getProduct(c *gin.Context) {
 func getUserFollowers(c *gin.Context) {
 	user := c.Param("user_id")
 
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -545,8 +555,8 @@ func createUser(c *gin.Context) {
 
 func deleteUser(c *gin.Context) {
 	user := c.Param("user_id")
-	if checkUserExist(c, user) == false {
-		c.Status(http.StatusNotFound)
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
 		return
 	}
 
@@ -627,13 +637,27 @@ func login(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// checkUserExist is a helper function that checks if a user with the given id exists in the database.
-func checkUserExist(c *gin.Context, userID string) bool {
+// checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
+func checkIfUserExist(c *gin.Context, userID string) bool {
 	query := "SELECT user_id from Users WHERE user_id = $1"
 
 	var result User
 
 	err := pgxscan.Get(c, dbPool, &result, query, userID)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// checkIfProductExist is a helper function that checks if a product with the given ID exists in the database.
+func checkIfProductExist(c *gin.Context, productID int) bool {
+	query := "SELECT product_id from Product WHERE product_id = $1"
+
+	var result Product
+
+	err := pgxscan.Get(c, dbPool, &result, query, productID)
 	if err != nil {
 		return false
 	}

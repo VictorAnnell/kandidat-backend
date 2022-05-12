@@ -522,6 +522,68 @@ func TestDeleteUser(t *testing.T) {
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
+func TestGetPinnedProducts(t *testing.T) {
+	// Test with valid user ID
+	endpoint := "/users/1/pinned"
+	expectedHTTPStatusCode := http.StatusOK
+	expectedResponseStructSlice := []Product{}
+	bodyBytes := reqTester(t, get, endpoint, "", expectedHTTPStatusCode)
+	
+	// Test decoding of JSON response body
+	err := json.Unmarshal(bodyBytes, &expectedResponseStructSlice)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all product structs in the slice
+	for _, product := range expectedResponseStructSlice {
+		err = validate.Struct(product)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	// Test with invalid user ID
+	endpoint = "/users/99999/pinned"
+	expectedHTTPStatusCode = http.StatusNotFound
+
+	reqTester(t, get, endpoint, "", expectedHTTPStatusCode)
+}
+
+func TestAddPinnedProducts(t *testing.T) {
+	// Test with valid user ID and valid product ID
+	endpoint := "/users/1/pinned"
+	reqBody := `{"product_id": 2}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := Product{}
+	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test decoding of JSON response body
+	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate struct
+	err = validate.Struct(expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	// Test with invalid user ID
+	endpoint = "/users/99999/pinned"
+	expectedHTTPStatusCode = http.StatusNotFound
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid product ID
+	endpoint = "/users/1/pinned"
+	reqBody = `{"product_id": 99999}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+}
+
 // reqTester is a helper function for request testing
 func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string, expectedHTTPStatusCode int) []byte {
 	t.Helper()
