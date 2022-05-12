@@ -35,9 +35,9 @@ CREATE TABLE Review (
 );
 
 CREATE TABLE Pinned_Product (
-    pinnedproduct_id SERIAL PRIMARY KEY,
     fk_product_id INT REFERENCES Product(product_id) ON DELETE CASCADE NOT NULL,
-    fk_user_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL
+    fk_user_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    PRIMARY KEY(fk_product_id, fk_user_id)
 );
 
 CREATE TABLE Community (
