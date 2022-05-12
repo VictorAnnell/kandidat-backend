@@ -424,7 +424,7 @@ func TestCreateUser(t *testing.T) {
 	req, _ := http.NewRequest(del, "/users/"+strconv.Itoa(expectedResponseStruct.UserID), nil)
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
+	if w.Code != http.StatusNoContent {
 		fmt.Println("Notice: the created test user could not be deleted.")
 		fmt.Println(w.Body.String())
 	}
@@ -497,23 +497,10 @@ func TestDeleteUser(t *testing.T) {
 		return
 	}
 
-	// Test with valid user ID (if test TestCreateUser above was run)
+	// Test with valid user ID
 	endpoint := "/users/" + strconv.Itoa(testUser.UserID)
-	expectedHTTPStatusCode := http.StatusOK
-	expectedResponseStruct := User{}
-	bodyBytes := reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
-
-	// Test decoding of JSON response body
-	err = json.Unmarshal(bodyBytes, &expectedResponseStruct)
-	if err != nil {
-		t.Errorf("Error unmarshalling json: %v", err)
-	}
-
-	// Validate struct
-	err = validate.Struct(expectedResponseStruct)
-	if err != nil {
-		t.Errorf("Error validating struct: %v", err)
-	}
+	expectedHTTPStatusCode := http.StatusNoContent
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 
 	// Test with invalid user ID
 	endpoint = "/users/99999"
@@ -524,11 +511,11 @@ func TestDeleteUser(t *testing.T) {
 
 func TestGetPinnedProducts(t *testing.T) {
 	// Test with valid user ID
-	endpoint := "/users/1/pinned"
+	endpoint := "/users/1/pinned" //nolint:goconst // No const is better for readability
 	expectedHTTPStatusCode := http.StatusOK
 	expectedResponseStructSlice := []Product{}
 	bodyBytes := reqTester(t, get, endpoint, "", expectedHTTPStatusCode)
-	
+
 	// Test decoding of JSON response body
 	err := json.Unmarshal(bodyBytes, &expectedResponseStructSlice)
 	if err != nil {
@@ -550,7 +537,7 @@ func TestGetPinnedProducts(t *testing.T) {
 	reqTester(t, get, endpoint, "", expectedHTTPStatusCode)
 }
 
-func TestAddPinnedProducts(t *testing.T) {
+func TestAddPinnedProduct(t *testing.T) {
 	// Test with valid user ID and valid product ID
 	endpoint := "/users/1/pinned"
 	reqBody := `{"product_id": 2}`
@@ -570,6 +557,16 @@ func TestAddPinnedProducts(t *testing.T) {
 		t.Errorf("Error validating struct: %v", err)
 	}
 
+	// Delete the created test pinned product
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(del, "/users/1/pinned/2", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		fmt.Println("Notice: the created test pinned product could not be deleted.")
+		fmt.Println(w.Body.String())
+	}
+
 	// Test with invalid user ID
 	endpoint = "/users/99999/pinned"
 	expectedHTTPStatusCode = http.StatusNotFound
@@ -582,6 +579,38 @@ func TestAddPinnedProducts(t *testing.T) {
 	expectedHTTPStatusCode = http.StatusBadRequest
 
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+}
+
+func TestDeletePinnedProduct(t *testing.T) {
+	// Add pinned product to be deleted
+	reqBody := `{"product_id": 2}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(post, "/users/1/pinned", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		fmt.Println(w.Body.String())
+		fmt.Println(w.Code)
+		t.Error("Failed to create test pinned product to delete")
+
+		return
+	}
+
+	// Test with valid user ID and valid product ID
+	endpoint := "/users/1/pinned/2"
+	expectedHTTPStatusCode := http.StatusNoContent
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+
+	// Test with invalid user ID
+	endpoint = "/users/99999/pinned/2"
+	expectedHTTPStatusCode = http.StatusNotFound
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+
+	// Test with invalid product ID
+	endpoint = "/users/1/pinned/99999"
+	expectedHTTPStatusCode = http.StatusNotFound
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
 // reqTester is a helper function for request testing

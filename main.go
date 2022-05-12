@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -161,8 +162,9 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
-		users.POST("/:user_id/pinned", addPinnedProducts)
+		users.POST("/:user_id/pinned", addPinnedProduct)
 		users.DELETE("/:user_id", deleteUser)
+		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 	}
 
 	communities := router.Group("/communities")
@@ -181,7 +183,7 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
-func addPinnedProducts(c *gin.Context) {
+func addPinnedProduct(c *gin.Context) {
 	user := c.Param("user_id")
 
 	if checkIfUserExist(c, user) == false {
@@ -201,7 +203,7 @@ func addPinnedProducts(c *gin.Context) {
 		return
 	}
 
-	if checkIfProductExist(c, product.ProductID) == false {
+	if checkIfProductExist(c, strconv.Itoa(product.ProductID)) == false {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Product does not exist"})
 		return
 	}
@@ -240,6 +242,33 @@ func getPinnedProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pinnedProducts)
+}
+
+func deletePinnedProduct(c *gin.Context) {
+	userID := c.Param("user_id")
+	productID := c.Param("product_id")
+
+	if checkIfUserExist(c, userID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	if checkIfProductExist(c, productID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+		return
+	}
+
+	query := "DELETE FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
+	_, err := dbPool.Exec(c, query, userID, productID)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"deleted": productID})
 }
 
 // Gives you all products that are owned by userId
@@ -570,10 +599,8 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	query = "DELETE FROM Users where user_id = $1 RETURNING *"
-
-	var deletedUser User
-	err = pgxscan.Get(c, dbPool, &deletedUser, query, user)
+	query = "DELETE FROM Users where user_id = $1"
+	_, err = dbPool.Exec(c, query, user)
 
 	if err != nil {
 		fmt.Println(err)
@@ -582,7 +609,7 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, deletedUser)
+	c.JSON(http.StatusNoContent, gin.H{"deleted": user})
 }
 
 // login logs in the user with the given credentials.
@@ -652,7 +679,7 @@ func checkIfUserExist(c *gin.Context, userID string) bool {
 }
 
 // checkIfProductExist is a helper function that checks if a product with the given ID exists in the database.
-func checkIfProductExist(c *gin.Context, productID int) bool {
+func checkIfProductExist(c *gin.Context, productID string) bool {
 	query := "SELECT product_id from Product WHERE product_id = $1"
 
 	var result Product
