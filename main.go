@@ -350,7 +350,20 @@ func createReview(c *gin.Context) {
 		return
 	}
 
+	if checkIfUserExist(c, strconv.Itoa(review.ReviewerID)) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	if checkForDupReview(c, review.ReviewerID, owner) == true {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You have already left a review on this user"})
+
+		return
+	}
+
 	query := "INSERT INTO Review(rating,content, fk_reviewer_id, fk_owner_id) VALUES($1,$2, $3, $4) RETURNING *"
+
 	err = pgxscan.Get(c, dbPool, &review, query, review.Rating, review.Content, review.ReviewerID, owner)
 
 	if err != nil {
@@ -663,6 +676,20 @@ func login(c *gin.Context) {
 	response.Token = tokenString
 
 	c.JSON(http.StatusOK, response)
+}
+
+// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
+func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
+	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
+
+	var result Review
+
+	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
