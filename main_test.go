@@ -34,7 +34,10 @@ func TestMain(m *testing.M) {
 
 func RunTests(m *testing.M) int {
 	setupConfig()
-	gin.SetMode(gin.TestMode)
+
+	if _, modeisset := os.LookupEnv("GIN_MODE"); !modeisset {
+		gin.SetMode(gin.TestMode)
+	}
 
 	dbPool = setupDBPool()
 	router = setupRouter()
