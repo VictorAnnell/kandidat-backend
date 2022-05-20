@@ -362,6 +362,7 @@ func TestCreateReview(t *testing.T) {
 	// delete review to test
 	query := "DELETE FROM Review where fk_owner_id = $1 and fk_reviewer_id = $2"
 	_, err := dbPool.Exec(c, query, 1, 2)
+
 	if err != nil {
 		fmt.Println(err)
 	}
