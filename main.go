@@ -53,6 +53,10 @@ type UserCommunity struct {
 	UserID      int `json:"user_id" db:"fk_user_id"`
 }
 
+type Follow struct {
+    Followed  int  `json:"followed_id" bindning:"required" db:"fk_user_id"`
+}
+
 // Review struct for the database table Review.
 type Review struct {
 	ReviewID   int    `json:"review_id"`
@@ -164,6 +168,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
 		users.POST("/:user_id/pinned", addPinnedProduct)
+        users.POST("/:user_id/follow", createFollow)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 	}
@@ -179,7 +184,6 @@ func setupRouter() *gin.Engine {
 		products.GET("/:product_id", getProduct)
 	}
 	router.POST("/login", login)
-	router.POST("/User_Followers/follow", createFollow)
 
 	return router
 }
@@ -754,11 +758,8 @@ func main() {
 }
 
 func createFollow(c *gin.Context) {
-	type Follow struct {
-		following int
-		followed  int
-	}
 
+	following := c.Param("user_id")
 	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
@@ -767,10 +768,11 @@ func createFollow(c *gin.Context) {
 	}
 
 	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
-	_, err := dbPool.Exec(c, query, follow.following, follow.followed)
+	_, err := dbPool.Exec(c, query, following, follow.Followed)
 
 	if err != nil {
 		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	c.JSON(http.StatusOK, true)
