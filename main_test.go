@@ -25,6 +25,7 @@ const (
 	get  = "GET"
 	post = "POST"
 	del  = "DELETE"
+	put  = "PUT"
 )
 
 func TestMain(m *testing.M) {
@@ -631,4 +632,45 @@ func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string,
 	}
 
 	return w.Body.Bytes()
+}
+
+func TestUpdateUser(t *testing.T) {
+	// Test with valid JSON body
+	endpoint := "/users/2"
+	reqBody := `{"name": "Test User", "phone_number": "+12027485281", "password": "a nice password"}`
+	expectedHTTPStatusCode := http.StatusCreated
+	expectedResponseStruct := User{}
+	bodyBytes := reqTester(t, put, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test decoding of JSON response body
+	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate struct
+	err = validate.Struct(expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	// Test with invalid JSON body
+	endpoint = "/users"
+	reqBody = `{"invalid-field-name": "Test User", "phone_number": "this should be a number", "password": "a nice password"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Change back the original username
+	endpoint = "/users/2"
+	reqBody = `{"name": "Victor", "phone_number": "+12027455483", "password": "lorem ipsum", "rating": 4}`
+	expectedHTTPStatusCode = http.StatusCreated
+	expectedResponseStruct = User{}
+
+	reqTester(t, put, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid user ID
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(put, "/users/99999", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
