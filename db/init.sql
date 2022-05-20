@@ -60,6 +60,10 @@ INSERT INTO USERS (name, phone_number, password, rating,business) VALUES ('Victo
 
 /* test products product_id = 1 */
 INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Soffa','true',1,'Hej',1);
+/* test products product_id = 1 & 2*/
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Couch','true',1,'Couch description',1);
+
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Bed','true',1,'Bed description',1);
 
 /* test review review_id = 1 */
 INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);

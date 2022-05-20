@@ -259,8 +259,26 @@ func deletePinnedProduct(c *gin.Context) {
 		return
 	}
 
-	query := "DELETE FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
-	_, err := dbPool.Exec(c, query, userID, productID)
+	// Check if user has pinned product
+	var pinnedProductID int
+
+	query := "SELECT fk_product_id FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
+	err := pgxscan.Get(c, dbPool, &pinnedProductID, query, userID, productID)
+
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User has not pinned the product"})
+			return
+		}
+
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+
+	query = "DELETE FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
+	_, err = dbPool.Exec(c, query, userID, productID)
 
 	if err != nil {
 		fmt.Println(err)

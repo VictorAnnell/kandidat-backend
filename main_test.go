@@ -35,7 +35,10 @@ func TestMain(m *testing.M) {
 
 func RunTests(m *testing.M) int {
 	setupConfig()
-	gin.SetMode(gin.TestMode)
+
+	if _, modeisset := os.LookupEnv("GIN_MODE"); !modeisset {
+		gin.SetMode(gin.TestMode)
+	}
 
 	dbPool = setupDBPool()
 	router = setupRouter()
@@ -605,9 +608,14 @@ func TestDeletePinnedProduct(t *testing.T) {
 		return
 	}
 
+	// Test with valid but wrong user ID and valid product ID
+	endpoint := "/users/2/pinned/2"
+	expectedHTTPStatusCode := http.StatusNotFound
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+
 	// Test with valid user ID and valid product ID
-	endpoint := "/users/1/pinned/2"
-	expectedHTTPStatusCode := http.StatusNoContent
+	endpoint = "/users/1/pinned/2"
+	expectedHTTPStatusCode = http.StatusNoContent
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 
 	// Test with invalid user ID
