@@ -54,7 +54,8 @@ type UserCommunity struct {
 }
 
 type Follow struct {
-    Followed  int  `json:"followed_id" bindning:"required" db:"fk_user_id"`
+	UserFollowersID int `json:"user_followers_id" db:"user_followers_id"`
+	Followed        int `json:"followed_id" bindning:"required" db:"fk_user_id"`
 }
 
 // Review struct for the database table Review.
@@ -168,7 +169,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
 		users.POST("/:user_id/pinned", addPinnedProduct)
-        users.POST("/:user_id/follow", createFollow)
+		users.POST("/:user_id/followers", createFollow)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 	}
@@ -378,7 +379,6 @@ func createReview(c *gin.Context) {
 	}
 
 	if checkForDupReview(c, review.ReviewerID, owner) == true {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You have already left a review on this user"})
 
 		return
@@ -700,20 +700,6 @@ func login(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
-func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
-	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
-
-	var result Review
-
-	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
 // checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
 func checkIfUserExist(c *gin.Context, userID string) bool {
 	query := "SELECT user_id from Users WHERE user_id = $1"
@@ -757,9 +743,35 @@ func main() {
 	}
 }
 
-func createFollow(c *gin.Context) {
+// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
+func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
+	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
 
-	following := c.Param("user_id")
+	var result Review
+
+	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func checkForDupFollow(c *gin.Context, followed int, follower string) bool {
+	query := "SELECT user_followers_id FROM User_Followers WHERE fk_user_id = $1 AND fk_followed_id = $2"
+
+	var result Follow
+	err := pgxscan.Get(c, dbPool, &result, query, follower, followed)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+func createFollow(c *gin.Context) {
+	follower := c.Param("user_id")
+
 	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
@@ -767,8 +779,14 @@ func createFollow(c *gin.Context) {
 		return
 	}
 
-	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
-	_, err := dbPool.Exec(c, query, following, follow.Followed)
+	if checkForDupFollow(c, follow.Followed, follower) == true {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already follow this person"})
+
+		return
+	}
+
+	query := "INSERT INTO User_Followers(fk_user_id, fk_followed_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, follower, follow.Followed)
 
 	if err != nil {
 		fmt.Println(err)
