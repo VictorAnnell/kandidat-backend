@@ -357,14 +357,14 @@ func TestCreateProduct(t *testing.T) {
 
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
-
 func TestCreateReview(t *testing.T) {
-
 	c := context.Background()
 	// delete review to test
 	query := "DELETE FROM Review where fk_owner_id = $1 and fk_reviewer_id = $2"
-	dbPool.Exec(c, query, 1, 2)
-
+	_, err := dbPool.Exec(c, query, 1, 2)
+	if err != nil {
+		fmt.Println(err)
+	}
 	// Test with valid JSON body and valid user ID
 	endpoint := "/users/1/reviews"
 	reqBody := `{"rating": 5, "description": "Test Description", "reviewer_id": 2}`
@@ -373,7 +373,7 @@ func TestCreateReview(t *testing.T) {
 	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test decoding of JSON response body
-	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	err = json.Unmarshal(bodyBytes, &expectedResponseStruct)
 	if err != nil {
 		t.Errorf("Error unmarshalling json: %v", err)
 	}
