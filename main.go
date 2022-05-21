@@ -165,6 +165,7 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
+		users.GET("/:user_id/followingProducts", getFollowingUsersProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
@@ -612,6 +613,27 @@ func getUserIsFollowing(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, followers)
+}
+
+func getFollowingUsersProducts(c *gin.Context) {
+	user := c.Param("user_id")
+
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	var products []*Product
+
+	query := `SELECT * FROM Product WHERE fk_user_id in (SELECT user_id FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1))`
+	err := pgxscan.Select(c, dbPool, &products, query, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
 }
 
 // createUser creates a new user.
