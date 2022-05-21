@@ -774,7 +774,7 @@ func createFollow(c *gin.Context) {
 	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -790,6 +790,7 @@ func createFollow(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+		return
 	}
 
 	c.JSON(http.StatusOK, true)
