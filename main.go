@@ -161,6 +161,7 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id", getUser)
 		users.GET("/:user_id/communities", getUserCommunities)
 		users.GET("/:user_id/followers", getUserFollowers)
+		users.GET("/:user_id/following", getUserIsFollowing)
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
@@ -581,6 +582,28 @@ func getUserFollowers(c *gin.Context) {
 
 	query := ` SELECT * FROM Users WHERE user_id IN (SELECT fk_followed_id FROM User_Followers WHERE fk_user_id=$1)`
 
+	err := pgxscan.Select(c, dbPool, &followers, query, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, followers)
+}
+
+// getUserIsFollowing returns all users that the user with the given id is following.
+func getUserIsFollowing(c *gin.Context) {
+	user := c.Param("user_id")
+
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	var followers []*User
+
+	query := `SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1)`
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
