@@ -579,12 +579,11 @@ func getUserFollowers(c *gin.Context) {
 
 	var followers []*User
 
-	query := ` SELECT * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)`
+	query := ` SELECT * FROM Users WHERE user_id IN (SELECT fk_followed_id FROM User_Followers WHERE fk_user_id=$1)`
 
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
 	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
