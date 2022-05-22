@@ -166,6 +166,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/pinned", addPinnedProduct)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
+		users.PUT("/:user_id", updateUser)
 	}
 
 	communities := router.Group("/communities")
@@ -694,6 +695,34 @@ func login(c *gin.Context) {
 	response.Token = tokenString
 
 	c.JSON(http.StatusOK, response)
+}
+
+func updateUser(c *gin.Context) {
+	var user User
+
+	userid := c.Param("user_id")
+
+	if checkIfUserExist(c, userid) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	if err := c.Bind(&user); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	query := "UPDATE Users SET name = $2, phone_number = $3, password = $4, picture = $5, rating = $6 WHERE user_id = $1 RETURNING *"
+	err := pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
+
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		fmt.Println(err)
+
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
 }
 
 // checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
