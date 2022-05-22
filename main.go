@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Create the JWT key used to create the signature
@@ -655,6 +656,14 @@ func createUser(c *gin.Context) {
 	// Encode picture to base64
 	user.Picture = []byte(base64.StdEncoding.EncodeToString(user.Picture))
 
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	user.Password = string(hashedPassword)
 	query := "INSERT INTO Users(name, phone_number, password, picture, business) VALUES($1,$2, $3, $4, $5) RETURNING *"
 	err = pgxscan.Get(c, dbPool, &user, query, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Business)
 
@@ -701,37 +710,43 @@ func deleteUser(c *gin.Context) {
 // login logs in the user with the given credentials.
 func login(c *gin.Context) {
 	type LoginUser struct {
-		PhoneNumber string
-		Password    string
+		PhoneNumber string `json:"phone_number" binding:"required"`
+		Password    string `json:"password" binding:"required"`
 	}
+
+	var loginUser LoginUser
 
 	var response struct {
 		ID    int
 		Token string
 	}
 
-	var result LoginUser
+	var user User
 
-	var id int
+	if err := c.Bind(&loginUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	if err := c.Bind(&result); err != nil {
+	query := "SELECT password, user_id FROM Users where phone_number = $1"
+	err := pgxscan.Get(c, dbPool, &user, query, loginUser.PhoneNumber)
+
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect phone number"})
+			return
+		}
+
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
 
 		return
 	}
 
-	password := result.Password
-	query := "SELECT password, user_id FROM Users where phone_number = $1"
-
-	err := dbPool.QueryRow(c, query, result.PhoneNumber).Scan(&result.Password, &id)
+	// Check if password is correct
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginUser.Password))
 	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusInternalServerError)
-	}
-
-	if password != result.Password {
-		c.Status(http.StatusBadGateway)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect password"})
 		return
 	}
 
@@ -742,12 +757,15 @@ func login(c *gin.Context) {
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
 	}
 
-	response.ID = id
+	response.ID = user.UserID
 	response.Token = tokenString
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusCreated, response)
 }
 
 func updateUser(c *gin.Context) {
@@ -765,8 +783,17 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+
 	query := "UPDATE Users SET name = $2, phone_number = $3, password = $4, picture = $5, rating = $6 WHERE user_id = $1 RETURNING *"
-	err := pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
+	err = pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
 
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
