@@ -54,9 +54,9 @@ CREATE TABLE User_Community (
 
 
 /* test users user_id = 1 & 2 */
-INSERT INTO Users (name, phone_number, password, picture, rating, business) VALUES ('Gustav', '+12029182132', 'lorem ipsum', encode(pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg'), 'base64')::bytea, 3,'true');
+INSERT INTO Users (name, phone_number, password, picture, rating, business) VALUES ('Gustav', '+12029182132', '$2a$12$IDEtMuDeOB/m4e.BVwEJ0O/FdUXKNF3sq8BnNHFIQpdf8h/NJCJHi', encode(pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg'), 'base64')::bytea, 3,'true');
 
-INSERT INTO USERS (name, phone_number, password, rating,business) VALUES ('Victor', '+12027455483', 'lorem ipsum', 4,'true');
+INSERT INTO USERS (name, phone_number, password, rating,business) VALUES ('Victor', '+12027455483', '$2a$12$IDEtMuDeOB/m4e.BVwEJ0O/FdUXKNF3sq8BnNHFIQpdf8h/NJCJHi', 4,'true');
 
 /* test products product_id = 1 */
 INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Soffa','true',1,'Hej',1);
