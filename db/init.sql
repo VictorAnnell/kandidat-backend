@@ -65,6 +65,9 @@ INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Couch
 
 INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Bed','true',1,'Bed description',1);
 
+/* test products product_id = 3 for user_id 2 */
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Car','true',1,'Car description',2);
+
 /* test review review_id = 1 */
 INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);
 

@@ -165,7 +165,7 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
-		users.GET("/:user_id/followingProducts", getFollowingUsersProducts)
+		users.GET("/:user_id/following/products", getFollowingUsersProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
@@ -585,6 +585,7 @@ func getUserFollowers(c *gin.Context) {
 
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -606,7 +607,9 @@ func getUserIsFollowing(c *gin.Context) {
 
 	query := `SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1)`
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
+
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -627,7 +630,9 @@ func getFollowingUsersProducts(c *gin.Context) {
 
 	query := `SELECT * FROM Product WHERE fk_user_id in (SELECT user_id FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1))`
 	err := pgxscan.Select(c, dbPool, &products, query, user)
+
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -835,6 +840,7 @@ func createFollow(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
