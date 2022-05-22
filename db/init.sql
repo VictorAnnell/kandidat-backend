@@ -29,8 +29,8 @@ CREATE TABLE Review (
     review_id SERIAL PRIMARY KEY,
     rating INT NOT NULL,
     content VARCHAR,
-    fk_reviewer_id INT REFERENCES Users(user_id) NOT NULL,
-    fk_owner_id INT REFERENCES Users(user_id) NOT NULL
+    fk_reviewer_id INT REFERENCES Users(user_id) ON UPDATE CASCADE  NOT NULL,
+    fk_owner_id INT REFERENCES Users(user_id) ON UPDATE CASCADE NOT NULL
 
 );
 
