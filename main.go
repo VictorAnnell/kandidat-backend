@@ -166,7 +166,7 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
-		users.GET("/:user_id/followingProducts", getFollowingUsersProducts)
+		users.GET("/:user_id/following/products", getFollowingUsersProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
@@ -175,6 +175,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/followers", createFollow)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
+		users.PUT("/:user_id", updateUser)
 	}
 
 	communities := router.Group("/communities")
@@ -586,6 +587,7 @@ func getUserFollowers(c *gin.Context) {
 
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -607,7 +609,9 @@ func getUserIsFollowing(c *gin.Context) {
 
 	query := `SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1)`
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
+
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -628,7 +632,9 @@ func getFollowingUsersProducts(c *gin.Context) {
 
 	query := `SELECT * FROM Product WHERE fk_user_id in (SELECT user_id FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1))`
 	err := pgxscan.Select(c, dbPool, &products, query, user)
+
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
@@ -756,12 +762,14 @@ func updateUser(c *gin.Context) {
 	}
 
 	if err := c.Bind(&user); err != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 
 	// Encode picture to base64
 	user.Picture = []byte(base64.StdEncoding.EncodeToString(user.Picture))
+
 
 	query := "UPDATE Users SET name = $2, phone_number = $3, password = $4, picture = $5, rating = $6 WHERE user_id = $1 RETURNING *"
 	err := pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
@@ -819,7 +827,7 @@ func main() {
 	}
 }
 
-// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
+// checkForDupReview is a helper function that checks if the given reviewer already has a review for the given owner
 func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
 	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
 
@@ -866,6 +874,7 @@ func createFollow(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
 		return
 	}
 
