@@ -9,9 +9,9 @@ CREATE TABLE Users(
 );
 
 CREATE TABLE User_Followers(
-    user_follower_id SERIAL PRIMARY KEY,
+    user_followers_id SERIAL PRIMARY KEY,
     fk_user_id INT REFERENCES Users(user_id) NOT NULL,
-    fk_follower_id INT REFERENCES Users(user_id) NOT NULL
+    fk_followed_id INT REFERENCES Users(user_id) NOT NULL
 );
 
 CREATE TABLE Product (
@@ -65,6 +65,9 @@ INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Couch
 
 INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Bed','true',1,'Bed description',1);
 
+/* test products product_id = 3 for user_id 2 */
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Car','true',1,'Car description',2);
+
 /* test review review_id = 1 */
 INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);
 
@@ -78,4 +81,4 @@ INSERT INTO Pinned_Product (fk_product_id, fk_user_id) VALUES (1,1);
 INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (1,2);
 
 /* test user_followers user_follower_id = 1 */
-INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES (2, 1);
+INSERT INTO User_Followers(fk_user_id, fk_followed_id) VALUES (2, 1);

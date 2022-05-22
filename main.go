@@ -53,6 +53,11 @@ type UserCommunity struct {
 	UserID      int `json:"user_id" db:"fk_user_id"`
 }
 
+type Follow struct {
+	UserFollowersID int `json:"user_followers_id" db:"user_followers_id"`
+	Followed        int `json:"followed_id" bindning:"required" db:"fk_user_id"`
+}
+
 // Review struct for the database table Review.
 type Review struct {
 	ReviewID   int    `json:"review_id"`
@@ -156,14 +161,17 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id", getUser)
 		users.GET("/:user_id/communities", getUserCommunities)
 		users.GET("/:user_id/followers", getUserFollowers)
+		users.GET("/:user_id/following", getUserIsFollowing)
 		users.GET("/:user_id/products", getUserProducts)
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
+		users.GET("/:user_id/following/products", getFollowingUsersProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
 		users.POST("/:user_id/pinned", addPinnedProduct)
+		users.POST("/:user_id/followers", createFollow)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 		users.PUT("/:user_id", updateUser)
@@ -180,7 +188,6 @@ func setupRouter() *gin.Engine {
 		products.GET("/:product_id", getProduct)
 	}
 	router.POST("/login", login)
-	router.POST("/User_Followers/follow", createFollow)
 
 	return router
 }
@@ -375,7 +382,6 @@ func createReview(c *gin.Context) {
 	}
 
 	if checkForDupReview(c, review.ReviewerID, owner) == true {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You have already left a review on this user"})
 
 		return
@@ -576,17 +582,64 @@ func getUserFollowers(c *gin.Context) {
 
 	var followers []*User
 
-	query := ` SELECT * FROM Users WHERE user_id IN (SELECT fk_follower_id FROM User_Followers WHERE fk_user_id=$1)`
+	query := ` SELECT * FROM Users WHERE user_id IN (SELECT fk_followed_id FROM User_Followers WHERE fk_user_id=$1)`
 
 	err := pgxscan.Select(c, dbPool, &followers, query, user)
 	if err != nil {
 		fmt.Println(err)
-		c.Status(http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
 
 	c.JSON(http.StatusOK, followers)
+}
+
+// getUserIsFollowing returns all users that the user with the given id is following.
+func getUserIsFollowing(c *gin.Context) {
+	user := c.Param("user_id")
+
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	var followers []*User
+
+	query := `SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1)`
+	err := pgxscan.Select(c, dbPool, &followers, query, user)
+
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, followers)
+}
+
+func getFollowingUsersProducts(c *gin.Context) {
+	user := c.Param("user_id")
+
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	var products []*Product
+
+	query := `SELECT * FROM Product WHERE fk_user_id in (SELECT user_id FROM Users WHERE user_id IN (SELECT fk_user_id FROM User_Followers WHERE fk_followed_id=$1))`
+	err := pgxscan.Select(c, dbPool, &products, query, user)
+
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
 }
 
 // createUser creates a new user.
@@ -725,20 +778,6 @@ func updateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
-// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
-func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
-	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
-
-	var result Review
-
-	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
 // checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
 func checkIfUserExist(c *gin.Context, userID string) bool {
 	query := "SELECT user_id from Users WHERE user_id = $1"
@@ -782,24 +821,56 @@ func main() {
 	}
 }
 
-func createFollow(c *gin.Context) {
-	type Follow struct {
-		following int
-		followed  int
+// checkForDupReview is a helper function that checks if the given reviewer already has a review for the given owner
+func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
+	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
+
+	var result Review
+
+	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
+	if err != nil {
+		return false
 	}
+
+	return true
+}
+
+func checkForDupFollow(c *gin.Context, followed int, follower string) bool {
+	query := "SELECT user_followers_id FROM User_Followers WHERE fk_user_id = $1 AND fk_followed_id = $2"
+
+	var result Follow
+	err := pgxscan.Get(c, dbPool, &result, query, follower, followed)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+func createFollow(c *gin.Context) {
+	follower := c.Param("user_id")
 
 	var follow Follow
 
 	if err := c.BindJSON(&follow); err != nil {
-		c.JSON(http.StatusInternalServerError, false)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	query := "INSERT INTO User_Followers(fk_user_id, fk_follower_id) VALUES($1,$2)"
-	_, err := dbPool.Exec(c, query, follow.following, follow.followed)
+	if checkForDupFollow(c, follow.Followed, follower) == true {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already follow this person"})
+
+		return
+	}
+
+	query := "INSERT INTO User_Followers(fk_user_id, fk_followed_id) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, follower, follow.Followed)
 
 	if err != nil {
 		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
 	}
 
 	c.JSON(http.StatusOK, true)

@@ -631,6 +631,68 @@ func TestDeletePinnedProduct(t *testing.T) {
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
+func TestGetUserFollowing(t *testing.T) {
+	// Test with valid user ID
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(get, "/users/1/following", nil)
+	router.ServeHTTP(w, req)
+
+	var userarray []User
+
+	err := json.Unmarshal(w.Body.Bytes(), &userarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all User structs in the array userarray
+	for _, user := range userarray {
+		err = validate.Struct(user)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(get, "/users/99999/following", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetUserFollowingProducts(t *testing.T) {
+	// Test with valid user ID
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(get, "/users/1/following/products", nil)
+	router.ServeHTTP(w, req)
+
+	var productarray []Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &productarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all Product structs in the array productarray
+	for _, product := range productarray {
+		err = validate.Struct(product)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(get, "/users/99999/following/products", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
 // reqTester is a helper function for request testing
 func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string, expectedHTTPStatusCode int) []byte {
 	t.Helper()
