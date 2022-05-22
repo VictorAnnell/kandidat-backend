@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,7 +36,10 @@ func TestMain(m *testing.M) {
 
 func RunTests(m *testing.M) int {
 	setupConfig()
-	gin.SetMode(gin.TestMode)
+
+	if _, modeisset := os.LookupEnv("GIN_MODE"); !modeisset {
+		gin.SetMode(gin.TestMode)
+	}
 
 	dbPool = setupDBPool()
 	router = setupRouter()
@@ -354,8 +358,15 @@ func TestCreateProduct(t *testing.T) {
 
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
-
 func TestCreateReview(t *testing.T) {
+	c := context.Background()
+	// delete review to test
+	query := "DELETE FROM Review where fk_owner_id = $1 and fk_reviewer_id = $2"
+	_, err := dbPool.Exec(c, query, 1, 2)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 	// Test with valid JSON body and valid user ID
 	endpoint := "/users/1/reviews"
 	reqBody := `{"rating": 5, "description": "Test Description", "reviewer_id": 2}`
@@ -364,7 +375,7 @@ func TestCreateReview(t *testing.T) {
 	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test decoding of JSON response body
-	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	err = json.Unmarshal(bodyBytes, &expectedResponseStruct)
 	if err != nil {
 		t.Errorf("Error unmarshalling json: %v", err)
 	}
@@ -384,6 +395,7 @@ func TestCreateReview(t *testing.T) {
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test with valid JSON body and invalid user ID
+
 	endpoint = "/users/99999/reviews"
 	reqBody = `{"rating": 1, "description": "Test Description", "reviewer_id": 2}`
 	expectedHTTPStatusCode = http.StatusNotFound
@@ -402,8 +414,8 @@ func TestCreateReview(t *testing.T) {
 
 func TestCreateUser(t *testing.T) {
 	// Test with valid JSON body
-	endpoint := "/users"
-	reqBody := `{"name": "Test User", "phone_number": "+12027485281", "password": "a nice password"}`
+	endpoint := "/users" //nolint:goconst // No const is better for readability
+	reqBody := `{"name": "Test User", "phone_number": "+12027485281", "password": "a nice password", "Business" : false}`
 	expectedHTTPStatusCode := http.StatusCreated
 	expectedResponseStruct := User{}
 	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
@@ -432,7 +444,7 @@ func TestCreateUser(t *testing.T) {
 
 	// Test with invalid JSON body
 	endpoint = "/users"
-	reqBody = `{"invalid-field-name": "Test User", "phone_number": "this should be a number", "password": "a nice password"}`
+	reqBody = `{"invalid-field-name": "Test User", "phone_number": "this should be a number", "password": "a nice password", "business": false}`
 	expectedHTTPStatusCode = http.StatusBadRequest
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
@@ -476,7 +488,7 @@ func TestJoinCommunity(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	// Create user to delete
-	reqBody := `{"name": "Test User", "phone_number": "+12999999999", "password": "a nice password"}`
+	reqBody := `{"name": "Test User", "phone_number": "+12999999999", "password": "a nice password", "business": true}`
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(post, "/users", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -598,9 +610,14 @@ func TestDeletePinnedProduct(t *testing.T) {
 		return
 	}
 
+	// Test with valid but wrong user ID and valid product ID
+	endpoint := "/users/2/pinned/2"
+	expectedHTTPStatusCode := http.StatusNotFound
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+
 	// Test with valid user ID and valid product ID
-	endpoint := "/users/1/pinned/2"
-	expectedHTTPStatusCode := http.StatusNoContent
+	endpoint = "/users/1/pinned/2"
+	expectedHTTPStatusCode = http.StatusNoContent
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 
 	// Test with invalid user ID
@@ -637,7 +654,7 @@ func reqTester(t *testing.T, httpMethod string, endpoint string, reqBody string,
 func TestUpdateUser(t *testing.T) {
 	// Test with valid JSON body
 	endpoint := "/users/2"
-	reqBody := `{"name": "Test User", "phone_number": "+12027485281", "password": "a nice password"}`
+	reqBody := `{"name": "Test User", "phone_number": "+12027485281", "password": "a nice password", "business": false}`
 	expectedHTTPStatusCode := http.StatusCreated
 	expectedResponseStruct := User{}
 	bodyBytes := reqTester(t, put, endpoint, reqBody, expectedHTTPStatusCode)
@@ -662,7 +679,7 @@ func TestUpdateUser(t *testing.T) {
 
 	// Change back the original username
 	endpoint = "/users/2"
-	reqBody = `{"name": "Victor", "phone_number": "+12027455483", "password": "lorem ipsum", "rating": 4}`
+	reqBody = `{"name": "Victor", "phone_number": "+12027455483", "password": "lorem ipsum", "rating": 4, "business": false}`
 	expectedHTTPStatusCode = http.StatusCreated
 	expectedResponseStruct = User{}
 

@@ -4,7 +4,8 @@ CREATE TABLE Users(
     phone_number VARCHAR NOT NULL UNIQUE,
     password VARCHAR NOT NULL,
     picture bytea,
-    rating float4
+    rating float4,
+    business BOOLEAN NOT NULL
 );
 
 CREATE TABLE User_Followers(
@@ -16,7 +17,6 @@ CREATE TABLE User_Followers(
 CREATE TABLE Product (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
-    category VARCHAR NOT NULL,
     service BOOLEAN NOT NULL,
     price INT NOT NULL,
     upload_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -54,12 +54,16 @@ CREATE TABLE User_Community (
 
 
 /* test users user_id = 1 & 2 */
-INSERT INTO Users (name, phone_number, password, picture, rating) VALUES ('Gustav', '+12029182132', 'lorem ipsum', encode(pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg'), 'base64')::bytea, 3);
+INSERT INTO Users (name, phone_number, password, picture, rating, business) VALUES ('Gustav', '+12029182132', 'lorem ipsum', encode(pg_read_binary_file('/docker-entrypoint-initdb.d/victorkill.jpeg'), 'base64')::bytea, 3,'true');
 
-INSERT INTO USERS (name, phone_number, password, rating) VALUES ('Victor', '+12027455483', 'lorem ipsum', 4);
+INSERT INTO USERS (name, phone_number, password, rating,business) VALUES ('Victor', '+12027455483', 'lorem ipsum', 4,'true');
 
 /* test products product_id = 1 */
-INSERT INTO Product (name,category,service,price,description, fk_user_id ) VALUES ('Soffa','Furniture','true',1,'Hej',1);
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Soffa','true',1,'Hej',1);
+/* test products product_id = 1 & 2*/
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Couch','true',1,'Couch description',1);
+
+INSERT INTO Product (name,service,price,description, fk_user_id ) VALUES ('Bed','true',1,'Bed description',1);
 
 /* test review review_id = 1 */
 INSERT INTO Review (rating,content, fk_reviewer_id, fk_owner_id) VALUES (2,'SÄMST',1,2);

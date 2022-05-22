@@ -45,6 +45,7 @@ type User struct {
 	Password    string   `json:"password" binding:"required"`
 	Picture     []byte   `json:"picture"`
 	Rating      *float32 `json:"rating"`
+	Business    *bool    `json:"business" binding:"required"`
 }
 
 type UserCommunity struct {
@@ -65,7 +66,6 @@ type Review struct {
 type Product struct {
 	ProductID   int         `json:"product_id"`
 	Name        string      `json:"name" binding:"required"`
-	Category    string      `json:"category" binding:"required"`
 	Service     *bool       `json:"service" binding:"required"`
 	Price       int         `json:"price" binding:"required"`
 	UploadDate  pgtype.Date `json:"upload_date"`
@@ -260,8 +260,26 @@ func deletePinnedProduct(c *gin.Context) {
 		return
 	}
 
-	query := "DELETE FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
-	_, err := dbPool.Exec(c, query, userID, productID)
+	// Check if user has pinned product
+	var pinnedProductID int
+
+	query := "SELECT fk_product_id FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
+	err := pgxscan.Get(c, dbPool, &pinnedProductID, query, userID, productID)
+
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User has not pinned the product"})
+			return
+		}
+
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+
+	query = "DELETE FROM Pinned_Product WHERE fk_user_id = $1 AND fk_product_id = $2"
+	_, err = dbPool.Exec(c, query, userID, productID)
 
 	if err != nil {
 		fmt.Println(err)
@@ -323,8 +341,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,category,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Category, product.Service, product.Price, product.Description, product.Picture, userID)
+	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
 
 	if err != nil {
 		fmt.Println(err)
@@ -351,7 +369,20 @@ func createReview(c *gin.Context) {
 		return
 	}
 
+	if checkIfUserExist(c, strconv.Itoa(review.ReviewerID)) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	if checkForDupReview(c, review.ReviewerID, owner) == true {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You have already left a review on this user"})
+
+		return
+	}
+
 	query := "INSERT INTO Review(rating,content, fk_reviewer_id, fk_owner_id) VALUES($1,$2, $3, $4) RETURNING *"
+
 	err = pgxscan.Get(c, dbPool, &review, query, review.Rating, review.Content, review.ReviewerID, owner)
 
 	if err != nil {
@@ -571,8 +602,8 @@ func createUser(c *gin.Context) {
 	// Encode picture to base64
 	user.Picture = []byte(base64.StdEncoding.EncodeToString(user.Picture))
 
-	query := "INSERT INTO Users(name, phone_number, password, picture) VALUES($1,$2, $3, $4) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &user, query, user.Name, user.PhoneNumber, user.Password, user.Picture)
+	query := "INSERT INTO Users(name, phone_number, password, picture, business) VALUES($1,$2, $3, $4, $5) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &user, query, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Business)
 
 	if err != nil {
 		fmt.Println(err)
@@ -692,6 +723,20 @@ func updateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, user)
+}
+
+// checkIfReview Exist is a helper function that checks if a review with the given ID exists in the database.
+func checkForDupReview(c *gin.Context, reviewer int, owner string) bool {
+	query := "SELECT review_id FROM Review WHERE fk_reviewer_id = $1 AND fk_owner_id = $2"
+
+	var result Review
+
+	err := pgxscan.Get(c, dbPool, &result, query, reviewer, owner)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
