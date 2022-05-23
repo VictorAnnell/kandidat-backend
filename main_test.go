@@ -753,3 +753,23 @@ func TestUpdateUser(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
+
+func TestLogin(t *testing.T) {
+	// Test with valid credentials
+	endpoint := "/login" //nolint:goconst // No const is better for readability
+	reqBody := `{"phone_number": "+12027455483", "password": "lorem ipsum"}`
+	expectedHTTPStatusCode := http.StatusCreated
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid phone number
+	endpoint = "/login"
+	reqBody = `{"phone_number": "+99999999999", "password": "lorem ipsum"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid password
+	endpoint = "/login"
+	reqBody = `{"phone_number": "+12027455483", "password": "wrong password"}`
+	expectedHTTPStatusCode = http.StatusBadRequest
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+}

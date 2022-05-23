@@ -2,24 +2,52 @@ version: '3.1'
 services:
   db:
     image: postgres
-    container_name: kandidat.db
+    container_name: kandidat-db
     restart: unless-stopped
     volumes:
       - "postgres-data:/var/lib/postgresql/data:delegated"
       - "./db:/docker-entrypoint-initdb.d"
     ports:
-      - "${DATABASE_HOST:-127.0.0.1}:${DATABASE_PORT:-5432}:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dbuser} -d ${POSTGRES_DB:-backend-db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   adminer:
     image: adminer
-    container_name: kandidat.adminer
+    container_name: kandidat-adminer
     restart: unless-stopped
     ports:
       - "127.0.0.1:8081:8080"
+
+  api:
+    build:
+      context: .
+    image: kandidat-api
+    container_name: kandidat-api
+    ports:
+      - "${DOCKER_WEB_PORT_FORWARD:-127.0.0.1:8080}:5000"
+    restart: unless-stopped
+    depends_on: 
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-backend-db}
+      - POSTGRES_USER=${POSTGRES_USER:-dbuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
+    healthcheck:
+      test: ["CMD-SHELL", "${DOCKER_HEALTHCHECK_TEST:-curl -f localhost:5000/ping}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres-data:
