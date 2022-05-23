@@ -8,7 +8,7 @@ services:
       - "postgres-data:/var/lib/postgresql/data:delegated"
       - "./db:/docker-entrypoint-initdb.d"
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${DOCKER_DB_PORT_FORWARD:-127.0.0.1:5432}:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
