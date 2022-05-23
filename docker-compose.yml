@@ -43,6 +43,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
+    healthcheck:
+      test: ["CMD-SHELL", "${DOCKER_HEALTHCHECK_TEST:-curl -f localhost:5000/ping}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres-data:
