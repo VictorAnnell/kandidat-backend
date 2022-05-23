@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/jackc/pgtype"
@@ -22,9 +23,12 @@ import (
 var jwtKey = []byte("my_secret_key")
 
 var (
-	dbPool      *pgxpool.Pool
-	serverURL   string
-	databaseURL string
+	dbPool        *pgxpool.Pool
+	serverURL     string
+	databaseURL   string
+	autoTLSDomain string
+	tlsKeyFile    string
+	tlsCertFile   string
 )
 
 // Reused constants
@@ -95,6 +99,9 @@ func setupConfig() {
 	databaseName := os.Getenv("POSTGRES_DB")
 	databaseUser := os.Getenv("POSTGRES_USER")
 	databasePassword := os.Getenv("POSTGRES_PASSWORD")
+	autoTLSDomain = os.Getenv("AUTO_TLS_DOMAIN")
+	tlsKeyFile = os.Getenv("TLS_KEY_FILE")
+	tlsCertFile = os.Getenv("TLS_CERT_FILE")
 
 	// Change empty config values to default values
 	if serverHost == "" {
@@ -155,6 +162,12 @@ func setupRouter() *gin.Engine {
 	}
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	router.Use(gin.Recovery())
+
+	// Set trusted proxies
+	err := router.SetTrustedProxies(nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	router.GET("/ping", ping)
 	users := router.Group("/users")
@@ -842,7 +855,23 @@ func main() {
 
 	router := setupRouter()
 
-	err := router.Run(serverURL)
+	var err error
+
+	switch {
+	case autoTLSDomain != "":
+		fmt.Println("Auto TLS enabled")
+
+		err = autotls.Run(router, autoTLSDomain)
+	case tlsCertFile != "" && tlsKeyFile != "":
+		fmt.Println("TLS enabled")
+
+		err = router.RunTLS(serverURL, tlsCertFile, tlsKeyFile)
+	default:
+		fmt.Println("No TLS enabled")
+
+		err = router.Run(serverURL)
+	}
+
 	if err != nil {
 		fmt.Println(err)
 	}
