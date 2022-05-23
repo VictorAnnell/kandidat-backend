@@ -1,4 +1,4 @@
-version: '3.1'
+version: '2.4'
 services:
   db:
     image: postgres
@@ -8,7 +8,7 @@ services:
       - "postgres-data:/var/lib/postgresql/data:delegated"
       - "./db:/docker-entrypoint-initdb.d"
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${DOCKER_DB_PORT_FORWARD:-127.0.0.1:5432}:5432"
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
@@ -43,11 +43,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
-    healthcheck:
-      test: ["CMD-SHELL", "${DOCKER_HEALTHCHECK_TEST:-curl -f localhost:5000/ping}"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
 volumes:
   postgres-data:
