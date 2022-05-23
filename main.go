@@ -77,6 +77,7 @@ type Product struct {
 	ProductID   int         `json:"product_id"`
 	Name        string      `json:"name" binding:"required"`
 	Service     *bool       `json:"service" binding:"required"`
+	Category    string      `json:"category" binding:"required"`
 	Price       int         `json:"price" binding:"required"`
 	UploadDate  pgtype.Date `json:"upload_date"`
 	Description string      `json:"description"`
@@ -362,8 +363,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
+	query := "INSERT INTO Product(name,service,category,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Category, product.Price, product.Description, product.Picture, userID)
 
 	if err != nil {
 		fmt.Println(err)
@@ -792,9 +793,14 @@ func updateUser(c *gin.Context) {
 	}
 
 	if err := c.Bind(&user); err != nil {
-		c.Status(http.StatusBadRequest)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
+
+	// Encode picture to base64
+	user.Picture = []byte(base64.StdEncoding.EncodeToString(user.Picture))
+
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -923,8 +929,7 @@ func createFollow(c *gin.Context) {
 	_, err := dbPool.Exec(c, query, follower, follow.Followed)
 
 	if err != nil {
-		fmt.Println(err)
-		c.Status(http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}

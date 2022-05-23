@@ -18,6 +18,7 @@ CREATE TABLE Product (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
     service BOOLEAN NOT NULL,
+    category VARCHAR NOT NULL,
     price INT NOT NULL,
     upload_date DATE NOT NULL DEFAULT CURRENT_DATE,
     description VARCHAR,
