@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/VictorAnnell/kandidat-backend/message"
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/VictorAnnell/kandidat-backend/websocket"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
@@ -23,12 +26,16 @@ import (
 var jwtKey = []byte("my_secret_key")
 
 var (
-	dbPool        *pgxpool.Pool
-	serverURL     string
-	databaseURL   string
-	autoTLSDomain string
-	tlsKeyFile    string
-	tlsCertFile   string
+	dbPool            *pgxpool.Pool
+	serverURL         string
+	databaseURL       string
+	autoTLSDomain     string
+	tlsKeyFile        string
+	tlsCertFile       string
+	redisURL          string
+	redisPassword     string
+	redisCli          *rediscli.Redis
+	messageController *message.Controller
 )
 
 // Reused constants
@@ -102,6 +109,8 @@ func setupConfig() {
 	autoTLSDomain = os.Getenv("AUTO_TLS_DOMAIN")
 	tlsKeyFile = os.Getenv("TLS_KEY_FILE")
 	tlsCertFile = os.Getenv("TLS_CERT_FILE")
+	redisURL = os.Getenv("REDIS_URL")
+	redisPassword = os.Getenv("REDIS_PASSWORD")
 
 	// Change empty config values to default values
 	if serverHost == "" {
@@ -132,8 +141,15 @@ func setupConfig() {
 		databasePassword = "kandidat-backend"
 	}
 
+	if redisURL == "" {
+		redisURL = "localhost:6379"
+	}
+
 	serverURL = serverHost + ":" + serverPort
 	databaseURL = "postgres://" + databaseUser + ":" + databasePassword + "@" + databaseHost + ":" + databasePort + "/" + databaseName
+
+	redisCli = rediscli.NewRedis(redisURL, redisPassword)
+	messageController = message.NewController(redisCli)
 }
 
 // setupDBPool creates a connection pool to the database.
@@ -202,6 +218,9 @@ func setupRouter() *gin.Engine {
 		products.GET("/:product_id", getProduct)
 	}
 	router.POST("/login", login)
+	router.GET("/ws", func(c *gin.Context) {
+		websocket.Handler(c.Writer, c.Request, redisCli, messageController)
+	})
 
 	return router
 }
