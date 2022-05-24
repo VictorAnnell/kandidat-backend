@@ -188,6 +188,7 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/followers", createFollow)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
+        users.DELETE("/:user_id/followers)", deleteFollow)
 		users.PUT("/:user_id", updateUser)
 	}
 
@@ -914,7 +915,7 @@ func createFollow(c *gin.Context) {
 	}
 
 	if checkForDupFollow(c, follow.Followed, follower) == true {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You already follow this person"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already follow this user"})
 
 		return
 	}
@@ -930,4 +931,32 @@ func createFollow(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, true)
+}
+
+func deleteFollow(c *gin.Context) {
+    follower := c.Param("user_id")
+
+    var follow Follow
+
+	if err := c.BindJSON(&follow); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if checkForDupFollow(c, follow.Followed, follower) == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You don't follow this user"})
+
+		return
+	}
+
+    query := "DELETE FROM User_Followers WHERE fk_user_id = $1 AND fk_followed_id = $2"
+    _, err := dbPool.Exec(c, query, follower, follow.Followed)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+    }
+
+    c.JSON(http.StatusOK, true)
+
 }
