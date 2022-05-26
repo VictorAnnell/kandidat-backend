@@ -8,6 +8,7 @@ import (
 	"github.com/VictorAnnell/kandidat-backend/message"
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"github.com/VictorAnnell/kandidat-backend/websocket"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgtype"
@@ -213,6 +214,27 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
+// initRedisUsers adds all users from the PostgreSQL database to the Redis database.
+func initRedisUsers() {
+	var userlist []User
+
+	query := "SELECT user_id, name, phone_number, password, rating, business FROM Users"
+	err := pgxscan.Select(context.Background(), dbPool, &userlist, query)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Add all users from the database to the redis database
+	for _, user := range userlist {
+		_, err = redisCli.UserCreate(user.Name, user.Password)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+
 // main is the entry point for the application.
 func main() {
 	setupConfig()
@@ -221,6 +243,8 @@ func main() {
 	defer dbPool.Close()
 
 	router := setupRouter()
+
+	initRedisUsers()
 
 	var err error
 
