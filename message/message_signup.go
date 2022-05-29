@@ -19,7 +19,7 @@ func (p Controller) SignUp(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 	err = write(conn, op, &Message{
 		Type: DataTypeAuthorized,
 		Authorized: &DataAuthorized{
-			UserUUID:  user.UUID,
+			UserUUID:  user.ID,
 			AccessKey: user.AccessKey,
 		},
 	})

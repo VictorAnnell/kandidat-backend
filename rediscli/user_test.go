@@ -75,21 +75,21 @@ func TestUserMap(t *testing.T) {
 
 func TestUserCreate(t *testing.T) {
 
-	username := "test user"
-	password := "test password"
+	name := "test user"
+	id := "9999"
 
-	user, err := testRedisInstance.UserCreate(username, password)
+	user, err := testRedisInstance.UserCreate(id, name)
 	if err != nil {
 		t.Fatal("userCreate", err)
 	}
 
-	user, err = testRedisInstance.UserGet(user.UUID)
+	user, err = testRedisInstance.UserGet(user.ID)
 	if err != nil {
 		t.Fatal("userGet", err)
 	}
 
-	if user.Username != username {
-		log.Fatalf("expecte username [%s], actual username [%s]", username, user.Username)
+	if user.Name != name {
+		log.Fatalf("expecte username [%s], actual username [%s]", name, user.Name)
 	}
 
 	users, err := testRedisInstance.UserAll()

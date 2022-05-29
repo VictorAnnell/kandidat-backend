@@ -24,8 +24,8 @@ const (
 )
 
 type User struct {
-	UUID        string `json:"UUID"`
-	Username    string `json:"Username"`
+	ID        string `json:"UUID"`
+	Name    string `json:"Username"`
 	Password    string `json:"Password,omitempty"`
 	AccessKey   string `json:"AccessKey,omitempty"`
 	OnLine      bool   `json:"OnLine"`
@@ -108,12 +108,12 @@ func (r *Redis) UserAuthorize(username, password string) (*User, error) {
 		return nil, errors.New("wrong password")
 	}
 
-	user.AccessKey, err = r.UserUpdateAccessKey(user.UUID)
+	user.AccessKey, err = r.UserUpdateAccessKey(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.UserSetOnline(user.UUID)
+	err = r.UserSetOnline(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +138,8 @@ func (r *Redis) addUser(user *User) error {
 	}
 
 	index := elements - 1
-	keyUserUsernameIndex := r.getKeyUsersUsernameListIndex(user.Username)
-	keyUserUUIDIndex := r.getKeyUsersUUIDListIndex(user.UUID)
+	keyUserUsernameIndex := r.getKeyUsersUsernameListIndex(user.Name)
+	keyUserUUIDIndex := r.getKeyUsersUUIDListIndex(user.ID)
 
 	err = r.client.Set(keyUserUsernameIndex, fmt.Sprintf("%d", index), 0).Err()
 	if err != nil {
@@ -189,7 +189,7 @@ func (r *Redis) getUserFromListByUsername(username string) (*User, error) {
 		return nil, err
 	}
 
-	user.OnLine = r.UserIsOnline(user.UUID)
+	user.OnLine = r.UserIsOnline(user.ID)
 
 	return user, nil
 
@@ -209,24 +209,23 @@ func (r *Redis) getUserFromListByUUID(userUUID string) (*User, error) {
 		return nil, fmt.Errorf("getUserFromListByUUID[%s]: %w", userUUID, err)
 	}
 
-	user.OnLine = r.UserIsOnline(user.UUID)
+	user.OnLine = r.UserIsOnline(user.ID)
 
 	return user, nil
 
 }
 
-func (r *Redis) UserCreate(username, password string) (*User, error) {
+func (r *Redis) UserCreate(id, name string) (*User, error) {
 
-	log.Println("UserCreate", fmt.Sprintf("[%s|%s]", username, password))
+	log.Println("UserCreate", fmt.Sprintf("[%s|%s]", id, name))
 
-	if user, err := r.getUserFromListByUsername(username); err == nil {
+	if user, err := r.getUserFromListByUsername(name); err == nil {
 		return user, nil
 	}
 
 	user := &User{
-		UUID:     uuid.NewString(),
-		Username: username,
-		Password: password,
+		ID:     id,
+		Name: name,
 	}
 
 	if err := r.addUser(user); err != nil {

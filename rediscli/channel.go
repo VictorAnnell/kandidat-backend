@@ -213,8 +213,8 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 			user, err := r.getUserFromListByUUID(message.SenderUUID)
 			if err == nil {
 				message.Sender = &User{
-					UUID:     user.UUID,
-					Username: user.Username,
+					ID:     user.ID,
+					Name: user.Name,
 				}
 			}
 		}
@@ -222,8 +222,8 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 			user, err := r.getUserFromListByUUID(message.RecipientUUID)
 			if err == nil {
 				message.Recipient = &User{
-					UUID:     user.UUID,
-					Username: user.Username,
+					ID:     user.ID,
+					Name: user.Name,
 				}
 			}
 		}

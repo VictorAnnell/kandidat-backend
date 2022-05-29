@@ -26,8 +26,8 @@ func (p Controller) SysSignIn(user *rediscli.User) *Message {
 		Sys: &DataSys{
 			Type: DataTypeSignIn,
 			SignIn: &DataSignIn{
-				UUID:     user.UUID,
-				Username: user.Username,
+				UUID:     user.ID,
+				Username: user.Name,
 			},
 		},
 	}
@@ -40,8 +40,8 @@ func (p Controller) SysChannelJoin(user *rediscli.User, recipientsUUID []string)
 		Sys: &DataSys{
 			Type: DataTypeSignIn,
 			SignIn: &DataSignIn{
-				UUID:     user.UUID,
-				Username: user.Username,
+				UUID:     user.ID,
+				Username: user.Name,
 			},
 		},
 	}
@@ -54,7 +54,7 @@ func (p Controller) SysChannelLeave(user *rediscli.User, recipientsUUID []string
 		Sys: &DataSys{
 			Type: DataTypeChannelLeave,
 			ChannelLeave: &DataChannelLeave{
-				SenderUUID: user.UUID,
+				SenderUUID: user.ID,
 			},
 		},
 	}

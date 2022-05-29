@@ -28,9 +28,9 @@ func (p *Controller) Users(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 	for i := range values {
 
 		user := &rediscli.User{
-			UUID:     values[i].UUID,
-			Username: values[i].Username,
-			OnLine:   p.r.UserIsOnline(values[i].UUID),
+			ID:     values[i].ID,
+			Name: values[i].Name,
+			OnLine:   p.r.UserIsOnline(values[i].ID),
 		}
 		users = append(users, user)
 	}

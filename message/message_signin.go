@@ -30,7 +30,7 @@ func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 	err = write(conn, op, &Message{
 		Type: DataTypeAuthorized,
 		Authorized: &DataAuthorized{
-			UserUUID:  user.UUID,
+			UserUUID:  user.ID,
 			AccessKey: user.AccessKey,
 		},
 	})
@@ -38,7 +38,7 @@ func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 		return newError(0, err)
 	}
 
-	err = p.r.UserSetOnline(user.UUID)
+	err = p.r.UserSetOnline(user.ID)
 	if err != nil {
 		log.Println(fmt.Errorf("%s:%w", errUserSetOnline, err), sessionUUID, message)
 	}

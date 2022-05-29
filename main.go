@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/VictorAnnell/kandidat-backend/message"
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
@@ -228,7 +229,7 @@ func initRedisUsers() {
 
 	// Add all users from the database to the redis database
 	for _, user := range userlist {
-		_, err = redisCli.UserCreate(user.Name, user.Password)
+		_, err = redisCli.UserCreate(strconv.Itoa(user.UserID), user.Name)
 		if err != nil {
 			fmt.Println(err)
 		}
