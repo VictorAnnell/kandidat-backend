@@ -32,7 +32,7 @@ func (channel *ChannelPubSub) Closed() <-chan struct{} {
 
 func NewRedis(addr, passwd string) *Redis {
 
-	log.Println("Initialized redis client", addr,passwd)
+	log.Println("Initialized redis client", addr, passwd)
 
 	opt := &redis.Options{
 		Addr: addr,

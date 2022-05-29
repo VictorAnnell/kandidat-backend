@@ -8,6 +8,7 @@ import (
 const (
 	keyUserSession = "userSession"
 )
+
 func (r *Redis) getKeyUserSession(userSessionUUID string) string {
 	return fmt.Sprintf("%s.%s", keyUserSession, userSessionUUID)
 }

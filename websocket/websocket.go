@@ -148,7 +148,7 @@ func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Re
 					user, err := r.UserGet(msg.SenderUUID)
 					if err == nil {
 						msg.Sender = &rediscli.User{
-							ID:     user.ID,
+							ID:   user.ID,
 							Name: user.Name,
 						}
 					}
@@ -158,7 +158,7 @@ func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Re
 					user, err := r.UserGet(msg.RecipientUUID)
 					if err == nil {
 						msg.Recipient = &rediscli.User{
-							ID:     user.ID,
+							ID:   user.ID,
 							Name: user.Name,
 						}
 					}

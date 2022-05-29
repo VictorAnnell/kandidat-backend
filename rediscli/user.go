@@ -24,8 +24,8 @@ const (
 )
 
 type User struct {
-	ID        string `json:"UUID"`
-	Name    string `json:"Username"`
+	ID          string `json:"UUID"`
+	Name        string `json:"Username"`
 	Password    string `json:"Password,omitempty"`
 	AccessKey   string `json:"AccessKey,omitempty"`
 	OnLine      bool   `json:"OnLine"`
@@ -224,7 +224,7 @@ func (r *Redis) UserCreate(id, name string) (*User, error) {
 	}
 
 	user := &User{
-		ID:     id,
+		ID:   id,
 		Name: name,
 	}
 

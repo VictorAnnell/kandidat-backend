@@ -1,8 +1,8 @@
 package message
 
 import (
-	"github.com/gobwas/ws"
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/gobwas/ws"
 	"log"
 	"net"
 )
@@ -13,11 +13,11 @@ type DataChannelJoin struct {
 	Users         []*rediscli.User    `json:"users,omitempty"`
 }
 
-func (p Controller) ChannelJoin(sessionUUID string,conn net.Conn, op ws.OpCode, write Write,  message *Message) (*rediscli.ChannelPubSub, IError) {
+func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) (*rediscli.ChannelPubSub, IError) {
 
 	errI := p.ChannelLeave(sessionUUID, write, &Message{
-		SUUID: message.SUUID,
-		Type: DataTypeChannelLeave,
+		SUUID:    message.SUUID,
+		Type:     DataTypeChannelLeave,
 		UserUUID: message.UserUUID,
 		ChannelLeave: &DataChannelLeave{
 			RecipientUUID: message.ChannelJoin.RecipientUUID,
@@ -26,9 +26,9 @@ func (p Controller) ChannelJoin(sessionUUID string,conn net.Conn, op ws.OpCode, 
 	if errI != nil {
 		log.Println(errI)
 	}
-	
+
 	channelSessionsRemove(sessionUUID)
-	user,err := p.r.UserGet(message.UserUUID)
+	user, err := p.r.UserGet(message.UserUUID)
 	if err != nil {
 		return nil, newError(100, err)
 	}
@@ -40,7 +40,7 @@ func (p Controller) ChannelJoin(sessionUUID string,conn net.Conn, op ws.OpCode, 
 
 	messagesLen, err := p.r.ChannelMessagesCount(channelUUID)
 	if err != nil {
-		return nil, newError(111,err)
+		return nil, newError(111, err)
 	}
 
 	var offset int64

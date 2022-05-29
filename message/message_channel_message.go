@@ -1,9 +1,9 @@
 package message
 
 import (
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"github.com/gobwas/ws"
 	"github.com/google/uuid"
-	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"net"
 	"time"
 )

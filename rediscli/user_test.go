@@ -7,6 +7,7 @@ import (
 )
 
 var testRedisInstance = NewRedis("localhost:6379", "")
+
 /*
 func TestRedis_UserStatus(t *testing.T) {
 

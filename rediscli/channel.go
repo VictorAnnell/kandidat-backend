@@ -185,7 +185,7 @@ func (r *Redis) ChannelLeave(senderUUID, recipientUUID string) (string, error) {
 
 }
 
-func (r *Redis) ChannelMessagesCount(channelUUID string) (int64, error)  {
+func (r *Redis) ChannelMessagesCount(channelUUID string) (int64, error) {
 	key := r.getKeyChannelMessages(channelUUID)
 	return r.client.LLen(key).Result()
 }
@@ -213,7 +213,7 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 			user, err := r.getUserFromListByUUID(message.SenderUUID)
 			if err == nil {
 				message.Sender = &User{
-					ID:     user.ID,
+					ID:   user.ID,
 					Name: user.Name,
 				}
 			}
@@ -222,7 +222,7 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 			user, err := r.getUserFromListByUUID(message.RecipientUUID)
 			if err == nil {
 				message.Recipient = &User{
-					ID:     user.ID,
+					ID:   user.ID,
 					Name: user.Name,
 				}
 			}
@@ -245,7 +245,7 @@ func (r *Redis) ChannelUsers(channelUUID string) ([]*User, error) {
 
 	users := make([]*User, 0)
 
-	for userUUID, _ := range values {
+	for userUUID := range values {
 		user, err := r.getUserFromListByUUID(userUUID)
 		if err != nil {
 			log.Println(err)

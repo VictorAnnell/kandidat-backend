@@ -1,9 +1,9 @@
 package message
 
 import (
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"github.com/go-redis/redis"
 	"github.com/gobwas/ws"
-	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"net"
 )
 
@@ -29,8 +29,8 @@ func (p *Controller) Users(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 
 		user := &rediscli.User{
 			ID:     values[i].ID,
-			Name: values[i].Name,
-			OnLine:   p.r.UserIsOnline(values[i].ID),
+			Name:   values[i].Name,
+			OnLine: p.r.UserIsOnline(values[i].ID),
 		}
 		users = append(users, user)
 	}

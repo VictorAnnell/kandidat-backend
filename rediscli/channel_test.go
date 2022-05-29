@@ -52,7 +52,7 @@ func TestRedis_ChannelJoinPrivate(t *testing.T) {
 				Message:       fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
 				CreatedAt:     time.Now(),
 			}
-			_,err := testRedisInstance.ChannelMessage(message)
+			_, err := testRedisInstance.ChannelMessage(message)
 			if err != nil {
 				t.Error(err)
 			}
@@ -112,7 +112,7 @@ func TestRedis_ChannelJoinPublic(t *testing.T) {
 				Message:       fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
 				CreatedAt:     time.Now(),
 			}
-			_,err := testRedisInstance.ChannelMessage(message)
+			_, err := testRedisInstance.ChannelMessage(message)
 			if err != nil {
 				t.Error(err)
 			}

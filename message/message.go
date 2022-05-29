@@ -2,8 +2,8 @@ package message
 
 import (
 	"fmt"
-	"github.com/gobwas/ws"
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/gobwas/ws"
 	"io"
 	"log"
 	"net"
@@ -107,10 +107,10 @@ func channelSessionsSendMessage(skipUserUUID, channelUUID string, write Write, m
 	defer channelSessionsSync.RUnlock()
 	for _, data := range channelSessionsJoins[channelUUID] {
 		if skipUserUUID != "" && skipUserUUID == data.userUUID {
-			log.Println(">>>>>>>>>>>>SKIP",skipUserUUID, fmt.Sprintf("%+v", message))
+			log.Println(">>>>>>>>>>>>SKIP", skipUserUUID, fmt.Sprintf("%+v", message))
 			continue
 		}
-		log.Println(">>>>>>>>>>>>SEND",skipUserUUID, fmt.Sprintf("%+v", message))
+		log.Println(">>>>>>>>>>>>SEND", skipUserUUID, fmt.Sprintf("%+v", message))
 		if err := write(data.conn, ws.OpText, message); err != nil {
 			log.Println(err)
 		}
