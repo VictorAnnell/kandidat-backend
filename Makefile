@@ -5,15 +5,17 @@ up:
 down:
 	docker-compose down -v --remove-orphans
 logs:
-	docker-compose logs -f
+	docker-compose --ansi always logs -f --tail 1000
 reset:
-	docker-compose down -v
-	docker-compose up -d
+	docker-compose down -v --remove-orphans
+	docker-compose up -d --build
 run:
 	go run .
 test:
-	go test -v
+	go test -v './...'
 lint:
 	golangci-lint run
 fmt:
-	go fmt
+	go fmt 'github.com/VictorAnnell/...'
+	go mod tidy
+	goimports -w .
