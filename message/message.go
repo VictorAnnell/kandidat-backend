@@ -2,12 +2,13 @@ package message
 
 import (
 	"fmt"
-	"github.com/VictorAnnell/kandidat-backend/rediscli"
-	"github.com/gobwas/ws"
 	"io"
 	"log"
 	"net"
 	"sync"
+
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/gobwas/ws"
 )
 
 type (

@@ -1,10 +1,11 @@
 package message
 
 import (
+	"net"
+
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"github.com/go-redis/redis"
 	"github.com/gobwas/ws"
-	"net"
 )
 
 type DataUsers struct {

@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis"
-	"github.com/google/uuid"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 const (

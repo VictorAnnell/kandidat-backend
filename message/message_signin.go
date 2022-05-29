@@ -2,10 +2,11 @@ package message
 
 import (
 	"fmt"
-	"github.com/gobwas/ws"
 	"log"
 	"net"
 	"sync"
+
+	"github.com/gobwas/ws"
 )
 
 type DataSignIn struct {

@@ -1,8 +1,9 @@
 package message
 
 import (
-	"github.com/gobwas/ws"
 	"net"
+
+	"github.com/gobwas/ws"
 )
 
 type DataSignUp struct {

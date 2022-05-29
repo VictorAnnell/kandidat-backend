@@ -1,11 +1,12 @@
 package message
 
 import (
+	"net"
+	"time"
+
 	"github.com/VictorAnnell/kandidat-backend/rediscli"
 	"github.com/gobwas/ws"
 	"github.com/google/uuid"
-	"net"
-	"time"
 )
 
 type DataChannelMessage struct {

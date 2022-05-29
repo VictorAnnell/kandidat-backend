@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis"
-	"github.com/google/uuid"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 const (

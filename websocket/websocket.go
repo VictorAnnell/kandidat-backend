@@ -3,16 +3,17 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/VictorAnnell/kandidat-backend/message"
-	"github.com/VictorAnnell/kandidat-backend/rediscli"
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
-	"github.com/google/uuid"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/VictorAnnell/kandidat-backend/message"
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
+	"github.com/google/uuid"
 )
 
 func Write(conn io.ReadWriter, op ws.OpCode, message *message.Message) error {

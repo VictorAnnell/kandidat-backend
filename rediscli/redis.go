@@ -1,9 +1,10 @@
 package rediscli
 
 import (
-	"github.com/go-redis/redis"
 	"log"
 	"sync"
+
+	"github.com/go-redis/redis"
 )
 
 type Redis struct {

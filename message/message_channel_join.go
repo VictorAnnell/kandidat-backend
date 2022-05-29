@@ -1,10 +1,11 @@
 package message
 
 import (
-	"github.com/VictorAnnell/kandidat-backend/rediscli"
-	"github.com/gobwas/ws"
 	"log"
 	"net"
+
+	"github.com/VictorAnnell/kandidat-backend/rediscli"
+	"github.com/gobwas/ws"
 )
 
 type DataChannelJoin struct {

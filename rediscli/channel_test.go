@@ -2,11 +2,12 @@ package rediscli
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestRedis_ChannelJoinPrivate(t *testing.T) {
