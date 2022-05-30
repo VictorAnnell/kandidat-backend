@@ -28,7 +28,7 @@ type User struct {
 	ID          string `json:"UUID"`
 	Name        string `json:"Username"`
 	Password    string `json:"Password,omitempty"`
-	AccessKey   string `json:"AccessKey,omitempty"`
+	// AccessKey   string `json:"AccessKey,omitempty"`
 	OnLine      bool   `json:"OnLine"`
 	SessionUUID string `json:"-"`
 }
@@ -109,10 +109,10 @@ func (r *Redis) UserAuthorize(username, password string) (*User, error) {
 		return nil, errors.New("wrong password")
 	}
 
-	user.AccessKey, err = r.UserUpdateAccessKey(user.ID)
-	if err != nil {
-		return nil, err
-	}
+	// user.AccessKey, err = r.UserUpdateAccessKey(user.ID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	err = r.UserSetOnline(user.ID)
 	if err != nil {

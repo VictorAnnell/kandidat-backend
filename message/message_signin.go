@@ -32,7 +32,7 @@ func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 		Type: DataTypeAuthorized,
 		Authorized: &DataAuthorized{
 			UserUUID:  user.ID,
-			AccessKey: user.AccessKey,
+			// AccessKey: user.AccessKey,
 		},
 	})
 	if err != nil {
