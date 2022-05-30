@@ -84,6 +84,7 @@ type Product struct {
 	Description string      `json:"description"`
 	Picture     []byte      `json:"picture"`
 	UserID      int         `json:"user_id" db:"fk_user_id"`
+	BuyerID     int         `json:"buyer_id" db:"fk_buyer_id"`
 }
 
 // setupConfig reads in .env file and ENV variables if set, otherwise use default values.
