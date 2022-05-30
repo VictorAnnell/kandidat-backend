@@ -53,7 +53,7 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 
 	}()
 
-	err = Write(conn, ws.OpText, c.Ready(userSessionUUID))
+	// err = Write(conn, ws.OpText, c.Ready(userSessionUUID))
 	if err != nil {
 		initErr <- err
 		return
