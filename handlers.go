@@ -147,7 +147,7 @@ func getUserProducts(c *gin.Context) {
 
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Status(http.StatusInternalServerError)
 
 		return
 	}
@@ -174,8 +174,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id,fk_buyer_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID, product.BuyerID)
+	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
 
 	if err != nil {
 		fmt.Println(err)
