@@ -25,7 +25,7 @@ const (
 )
 
 type User struct {
-	ID          string `json:"UUID"`
+	ID          string `json:"user_id"`
 	Name        string `json:"Username"`
 	Password    string `json:"Password,omitempty"`
 	// AccessKey   string `json:"AccessKey,omitempty"`

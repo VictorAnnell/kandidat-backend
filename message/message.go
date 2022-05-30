@@ -35,7 +35,7 @@ type Message struct {
 	recipientsSessionUUID []string
 	SUUID                 string              `json:"SUUID,omitempty"`
 	Type                  DataType            `json:"type"`
-	UserUUID              string              `json:"userUUID,omitempty"`
+	UserID              string              `json:"user_id,omitempty"`
 	User                  *rediscli.User      `json:"user,omitempty"`
 	UserAccessKey         string              `json:"userAccessKey,omitempty"`
 	Sys                   *DataSys            `json:"sys,omitempty"`

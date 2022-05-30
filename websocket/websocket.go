@@ -97,7 +97,7 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 			case message.DataTypeChannelLeave:
 				receivedErr = c.ChannelLeave(userSessionUUID, Write, msg)
 			default:
-				err := Write(conn, op, c.Error(errCode, fmt.Errorf("unknow request data type: %s", msg.Type), msg.UserUUID, msg))
+				err := Write(conn, op, c.Error(errCode, fmt.Errorf("unknow request data type: %s", msg.Type), msg.UserID, msg))
 				if err != nil {
 					log.Println(err)
 					continue
@@ -145,8 +145,8 @@ func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Re
 				log.Println(err)
 			} else {
 
-				if msg.SenderUUID != "" {
-					user, err := r.UserGet(msg.SenderUUID)
+				if msg.SenderID != "" {
+					user, err := r.UserGet(msg.SenderID)
 					if err == nil {
 						msg.Sender = &rediscli.User{
 							ID:   user.ID,

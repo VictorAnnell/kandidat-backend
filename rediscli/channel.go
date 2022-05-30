@@ -21,7 +21,7 @@ const (
 
 type Message struct {
 	UUID          string    `json:"UUID"`
-	SenderUUID    string    `json:"SenderUUID"`
+	SenderID    string    `json:"SenderID"`
 	Sender        *User     `json:"Sender,omitempty"`
 	RecipientUUID string    `json:"RecipientUUID"`
 	Recipient     *User     `json:"Recipient,omitempty"`
@@ -129,7 +129,7 @@ func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, s
 }
 
 func (r *Redis) ChannelMessage(message *Message) (string, error) {
-	channelUUID, err := r.getChannelUUID(message.SenderUUID, message.RecipientUUID)
+	channelUUID, err := r.getChannelUUID(message.SenderID, message.RecipientUUID)
 	if err != nil {
 		return "", err
 	}
@@ -210,8 +210,8 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 		if err != nil {
 			return nil, err
 		}
-		if message.SenderUUID != "" {
-			user, err := r.getUserFromListByUUID(message.SenderUUID)
+		if message.SenderID != "" {
+			user, err := r.getUserFromListByUUID(message.SenderID)
 			if err == nil {
 				message.Sender = &User{
 					ID:   user.ID,

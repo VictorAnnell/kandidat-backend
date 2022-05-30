@@ -12,7 +12,7 @@ import (
 type DataChannelMessage struct {
 	UUID          string         `json:"UUID"`
 	Sender        *rediscli.User `json:"Sender,omitempty"`
-	SenderUUID    string         `json:"SenderUUID"`
+	SenderID    string         `json:"SenderID"`
 	Recipient     *rediscli.User `json:"Recipient,omitempty"`
 	RecipientUUID string         `json:"RecipientUUID"`
 	Message       string         `json:"Message"`
@@ -23,7 +23,7 @@ func (p Controller) ChannelMessage(sessionUUID string, conn net.Conn, op ws.OpCo
 
 	channelMessage := &rediscli.Message{
 		UUID:          uuid.NewString(),
-		SenderUUID:    message.UserUUID,
+		SenderID:    message.UserID,
 		RecipientUUID: message.ChannelMessage.RecipientUUID,
 		Message:       message.ChannelMessage.Message,
 		CreatedAt:     time.Now(),
@@ -34,7 +34,7 @@ func (p Controller) ChannelMessage(sessionUUID string, conn net.Conn, op ws.OpCo
 		return nil
 	}
 
-	channelSessionsSendMessage(message.UserUUID, channelUUID, writer, message)
+	channelSessionsSendMessage(message.UserID, channelUUID, writer, message)
 
 	return nil
 }

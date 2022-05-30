@@ -19,7 +19,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	errI := p.ChannelLeave(sessionUUID, write, &Message{
 		SUUID:    message.SUUID,
 		Type:     DataTypeChannelLeave,
-		UserUUID: message.UserUUID,
+		UserID: message.UserID,
 		ChannelLeave: &DataChannelLeave{
 			RecipientUUID: message.ChannelJoin.RecipientUUID,
 		},
@@ -29,12 +29,12 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	}
 
 	channelSessionsRemove(sessionUUID)
-	user, err := p.r.UserGet(message.UserUUID)
+	user, err := p.r.UserGet(message.UserID)
 	if err != nil {
 		return nil, newError(100, err)
 	}
 
-	channel, channelUUID, err := p.r.ChannelJoin(message.UserUUID, message.ChannelJoin.RecipientUUID)
+	channel, channelUUID, err := p.r.ChannelJoin(message.UserID, message.ChannelJoin.RecipientUUID)
 	if err != nil {
 		return nil, newError(101, err)
 	}
@@ -62,7 +62,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 		return nil, newError(103, err)
 	}
 
-	channelSessionsAdd(conn, channelUUID, sessionUUID, message.UserUUID)
+	channelSessionsAdd(conn, channelUUID, sessionUUID, message.UserID)
 
 	err = write(conn, op, &Message{
 		Type: DataTypeChannelJoin,
@@ -79,7 +79,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	channelSessionsSendMessage("", channelUUID, write, &Message{
 		Type:     DataTypeSys,
 		SUUID:    sessionUUID,
-		UserUUID: message.UserUUID,
+		UserID: message.UserID,
 		User:     user,
 		Sys: &DataSys{
 			Type: DataTypeChannelJoin,

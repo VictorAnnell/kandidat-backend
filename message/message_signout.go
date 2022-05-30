@@ -11,12 +11,12 @@ type DataSignOut struct {
 }
 
 func (p Controller) SignOut(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) IError {
-	_, err := p.r.UserGet(message.UserUUID)
+	_, err := p.r.UserGet(message.UserID)
 	if err != nil {
 		return newError(errCodeSignOut, err)
 	}
 
-	p.r.UserSignOut(message.UserUUID)
+	p.r.UserSignOut(message.UserID)
 
 	err = write(conn, op, &Message{
 		Type: DataTypeSignOut,

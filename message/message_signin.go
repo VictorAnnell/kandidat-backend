@@ -45,7 +45,7 @@ func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 	}
 
 	usersConnSync.Lock()
-	usersConn[message.UserUUID] = conn
+	usersConn[message.UserID] = conn
 	for _, conn := range usersConn {
 		err := write(conn, op, p.SysSignIn(user))
 		if err != nil {
