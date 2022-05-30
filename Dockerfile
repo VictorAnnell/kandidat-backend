@@ -2,11 +2,17 @@ FROM golang as builder
 
 RUN mkdir /build
 
-COPY . /build/
-
 WORKDIR /build
 
-RUN CGO_ENABLED=0 GOOS=linux go build --buildvcs=false -o bin .
+ENV CGO_ENABLED=0
+
+COPY go.* .
+
+RUN go mod download
+
+COPY . /build/
+
+RUN GOOS=linux go build --buildvcs=false -o bin .
 
 FROM golang
 
