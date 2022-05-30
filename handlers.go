@@ -608,17 +608,11 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	user.Password = string(hashedPassword)
+	// Encode picture to base64
+	user.Picture = []byte(base64.StdEncoding.EncodeToString(user.Picture))
 
 	query := "UPDATE Users SET name = $2, phone_number = $3, password = $4, picture = $5, rating = $6 WHERE user_id = $1 RETURNING *"
-	err = pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
+	err := pgxscan.Get(c, dbPool, &user, query, userid, user.Name, user.PhoneNumber, user.Password, user.Picture, user.Rating)
 
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
