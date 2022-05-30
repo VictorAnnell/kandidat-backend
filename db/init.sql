@@ -22,7 +22,8 @@ CREATE TABLE Product (
     upload_date DATE NOT NULL DEFAULT CURRENT_DATE,
     description VARCHAR,
     picture bytea,
-    fk_user_id INT REFERENCES Users(user_id) NOT NULL
+    fk_user_id INT REFERENCES Users(user_id) NOT NULL,
+    fk_buyer_id INT REFERENCES Users(user_id)
 );
 
 CREATE TABLE Review (
