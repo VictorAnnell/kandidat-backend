@@ -147,7 +147,7 @@ func getUserProducts(c *gin.Context) {
 
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Status(http.StatusInternalServerError)
 
 		return
 	}
@@ -174,8 +174,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id,fk_buyer_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID, product.BuyerID)
+	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
 
 	if err != nil {
 		fmt.Println(err)
@@ -622,6 +622,32 @@ func updateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, user)
+}
+
+func updateProduct(c *gin.Context) {
+	var product Product
+
+	productid := c.Param("product_id")
+
+	if checkIfProductExist(c, productid) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+		return
+	}
+
+	if err := c.Bind(&product); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	query := "UPDATE Product SET name = $2, service = $3, price = $4, description = $5, picture = $6, fk_buyer_id = $7 where product_id = $1 RETURNING *"
+	err := pgxscan.Get(c, dbPool, &product, query, productid, product.Name, product.Service, product.Price, product.Description, product.Picture, product.BuyerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, product)
 }
 
 // checkIfUserExist is a helper function that checks if a user with the given ID exists in the database.
