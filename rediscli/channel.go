@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,6 +51,9 @@ func (r *Redis) GetChannelUUID(senderUUID, recipientUUID string) (string, error)
 	}
 	if recipientUUID == "" {
 		return "public", nil
+	}
+	if _, err := strconv.ParseInt(recipientUUID, 10, 64); err != nil {
+		return recipientUUID, nil
 	}
 	keySenderRecipient := r.getKeyChannelSenderRecipient(senderUUID, recipientUUID)
 	channelUUID, err := r.client.Get(keySenderRecipient).Result()
