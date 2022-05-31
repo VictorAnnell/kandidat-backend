@@ -25,12 +25,12 @@ func TestRedis_ChannelJoinPrivate(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	channelUUIDX, err := testRedisInstance.getChannelUUID(senderUUID, recipientUUID)
+	channelUUIDX, err := testRedisInstance.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	channelUUIDY, err := testRedisInstance.getChannelUUID(recipientUUID, senderUUID)
+	channelUUIDY, err := testRedisInstance.GetChannelUUID(recipientUUID, senderUUID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestRedis_ChannelJoinPublic(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	_, err = testRedisInstance.getChannelUUID(senderUUID, recipientUUID)
+	_, err = testRedisInstance.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		log.Fatal(err)
 	}

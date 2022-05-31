@@ -44,7 +44,7 @@ func (r *Redis) getKeyChannelSenderRecipient(senderUUID, recipientUUID string) s
 	return fmt.Sprintf("%s.%s.%s", keyChannelSenderRecipient, senderUUID, recipientUUID)
 }
 
-func (r *Redis) getChannelUUID(senderUUID, recipientUUID string) (string, error) {
+func (r *Redis) GetChannelUUID(senderUUID, recipientUUID string) (string, error) {
 	if senderUUID == "" {
 		return "", errors.New("empty sender UUID")
 	}
@@ -114,7 +114,7 @@ func (r *Redis) getChannelPubSub(channelUUID string) *ChannelPubSub {
 
 func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, string, error) {
 
-	channelUUID, err := r.getChannelUUID(senderUUID, recipientUUID)
+	channelUUID, err := r.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -129,7 +129,7 @@ func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, s
 }
 
 func (r *Redis) ChannelMessage(message *Message) (string, error) {
-	channelUUID, err := r.getChannelUUID(message.SenderID, message.RecipientUUID)
+	channelUUID, err := r.GetChannelUUID(message.SenderID, message.RecipientUUID)
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +155,7 @@ func (r *Redis) ChannelMessage(message *Message) (string, error) {
 
 func (r *Redis) ChannelLeave(senderUUID, recipientUUID string) (string, error) {
 
-	channelUUID, err := r.getChannelUUID(senderUUID, recipientUUID)
+	channelUUID, err := r.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		return "", err
 	}

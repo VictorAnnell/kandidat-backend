@@ -29,26 +29,28 @@ const (
 	DataTypeChannelMessage  DataType = "channelMessage"
 	DataTypeChannelMessages DataType = "channelMessages"
 	DataTypeChannelLeave    DataType = "channelLeave"
+	DataTypeChannelRead     DataType = "channelRead"
 )
 
 type Message struct {
 	recipientsSessionUUID []string
-	SUUID                 string              `json:"SUUID,omitempty"`
-	Type                  DataType            `json:"type"`
-	UserID                string              `json:"user_id,omitempty"`
-	User                  *rediscli.User      `json:"user,omitempty"`
-	UserAccessKey         string              `json:"userAccessKey,omitempty"`
-	Sys                   *DataSys            `json:"sys,omitempty"`
-	Ready                 *DataReady          `json:"ready,omitempty"`
-	Error                 *DataError          `json:"error,omitempty"`
-	Users                 *DataUsers          `json:"users,omitempty"`
-	SignIn                *DataSignIn         `json:"signIn,omitempty"`
-	SignUp                *DataSignUp         `json:"signUp,omitempty"`
-	SignOut               *DataSignOut        `json:"signOut,omitempty"`
-	Authorized            *DataAuthorized     `json:"authorized,omitempty"`
-	ChannelJoin           *DataChannelJoin    `json:"channelJoin,omitempty"`
-	ChannelMessage        *DataChannelMessage `json:"channelMessage,omitempty"`
-	ChannelLeave          *DataChannelLeave   `json:"channelLeave,omitempty"`
+	SUUID                 string               `json:"SUUID,omitempty"`
+	Type                  DataType             `json:"type"`
+	UserID                string               `json:"user_id,omitempty"`
+	User                  *rediscli.User       `json:"user,omitempty"`
+	UserAccessKey         string               `json:"userAccessKey,omitempty"`
+	Sys                   *DataSys             `json:"sys,omitempty"`
+	Ready                 *DataReady           `json:"ready,omitempty"`
+	Error                 *DataError           `json:"error,omitempty"`
+	Users                 *DataUsers           `json:"users,omitempty"`
+	SignIn                *DataSignIn          `json:"signIn,omitempty"`
+	SignUp                *DataSignUp          `json:"signUp,omitempty"`
+	SignOut               *DataSignOut         `json:"signOut,omitempty"`
+	Authorized            *DataAuthorized      `json:"authorized,omitempty"`
+	ChannelJoin           *DataChannelJoin     `json:"channelJoin,omitempty"`
+	ChannelMessage        *DataChannelMessage  `json:"channelMessage,omitempty"`
+	ChannelLeave          *DataChannelLeave    `json:"channelLeave,omitempty"`
+	ChannelMessages       *DataChannelMessages `json:"channelMessages,omitempty"`
 }
 
 type DataAuthorized struct {

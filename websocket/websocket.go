@@ -94,6 +94,8 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 				}
 			case message.DataTypeChannelMessage:
 				receivedErr = c.ChannelMessage(userSessionUUID, conn, op, Write, msg)
+			case message.DataTypeChannelMessages:
+				receivedErr = c.ChannelMessages(userSessionUUID, conn, op, Write, msg)
 			case message.DataTypeChannelLeave:
 				receivedErr = c.ChannelLeave(userSessionUUID, Write, msg)
 			default:
