@@ -10,16 +10,11 @@ import (
 
 type DataChannelJoin struct {
 	RecipientID string              `json:"recipientID,omitempty"`
-	CommunityID string              `json:"communityID,omitempty"`
 	Messages    []*rediscli.Message `json:"messages,omitempty"`
 	Users       []*rediscli.User    `json:"users,omitempty"`
 }
 
 func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) (*rediscli.ChannelPubSub, IError) {
-
-	if message.ChannelJoin.CommunityID == "" {
-		message.ChannelJoin.RecipientID = message.ChannelJoin.CommunityID
-	}
 
 	errI := p.ChannelLeave(sessionUUID, write, &Message{
 		SUUID:  message.SUUID,
