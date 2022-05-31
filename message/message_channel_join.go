@@ -9,9 +9,9 @@ import (
 )
 
 type DataChannelJoin struct {
-	RecipientID string              `json:"recipientID,omitempty"`
-	Messages    []*rediscli.Message `json:"messages,omitempty"`
-	Users       []*rediscli.User    `json:"users,omitempty"`
+	RecipientUUID string              `json:"recipientUUID,omitempty"`
+	Messages      []*rediscli.Message `json:"messages,omitempty"`
+	Users         []*rediscli.User    `json:"users,omitempty"`
 }
 
 func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) (*rediscli.ChannelPubSub, IError) {
@@ -21,7 +21,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 		Type:   DataTypeChannelLeave,
 		UserID: message.UserID,
 		ChannelLeave: &DataChannelLeave{
-			RecipientUUID: message.ChannelJoin.RecipientID,
+			RecipientUUID: message.ChannelJoin.RecipientUUID,
 		},
 	})
 	if errI != nil {
@@ -34,7 +34,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 		return nil, newError(100, err)
 	}
 
-	channel, channelUUID, err := p.r.ChannelJoin(message.UserID, message.ChannelJoin.RecipientID)
+	channel, channelUUID, err := p.r.ChannelJoin(message.UserID, message.ChannelJoin.RecipientUUID)
 	if err != nil {
 		return nil, newError(101, err)
 	}
@@ -67,9 +67,9 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	err = write(conn, op, &Message{
 		Type: DataTypeChannelJoin,
 		ChannelJoin: &DataChannelJoin{
-			RecipientID: message.ChannelJoin.RecipientID,
-			Messages:    channelMessages,
-			Users:       channelUsers,
+			RecipientUUID: message.ChannelJoin.RecipientUUID,
+			Messages:      channelMessages,
+			Users:         channelUsers,
 		},
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 		Sys: &DataSys{
 			Type: DataTypeChannelJoin,
 			ChannelJoin: &DataChannelJoin{
-				RecipientID: message.ChannelJoin.RecipientID,
+				RecipientUUID: message.ChannelJoin.RecipientUUID,
 			},
 		},
 	})

@@ -20,13 +20,13 @@ const (
 )
 
 type Message struct {
-	UUID        string    `json:"UUID"`
-	SenderID    string    `json:"SenderID"`
-	Sender      *User     `json:"Sender,omitempty"`
-	RecipientID string    `json:"RecipientID"`
-	Recipient   *User     `json:"Recipient,omitempty"`
-	Message     string    `json:"Message"`
-	CreatedAt   time.Time `json:"CreatedAt"`
+	UUID          string    `json:"UUID"`
+	SenderID      string    `json:"SenderID"`
+	Sender        *User     `json:"Sender,omitempty"`
+	RecipientUUID string    `json:"RecipientUUID"`
+	Recipient     *User     `json:"Recipient,omitempty"`
+	Message       string    `json:"Message"`
+	CreatedAt     time.Time `json:"CreatedAt"`
 }
 
 func (r *Redis) getKeyChannelUsers(channelUUID string) string {
@@ -129,7 +129,7 @@ func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, s
 }
 
 func (r *Redis) ChannelMessage(message *Message) (string, error) {
-	channelUUID, err := r.GetChannelUUID(message.SenderID, message.RecipientID)
+	channelUUID, err := r.GetChannelUUID(message.SenderID, message.RecipientUUID)
 	if err != nil {
 		return "", err
 	}
@@ -219,8 +219,8 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 				}
 			}
 		}
-		if message.RecipientID != "" {
-			user, err := r.getUserFromListByUUID(message.RecipientID)
+		if message.RecipientUUID != "" {
+			user, err := r.getUserFromListByUUID(message.RecipientUUID)
 			if err == nil {
 				message.Recipient = &User{
 					ID:   user.ID,

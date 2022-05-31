@@ -10,23 +10,23 @@ import (
 )
 
 type DataChannelMessage struct {
-	UUID        string         `json:"UUID"`
-	Sender      *rediscli.User `json:"Sender,omitempty"`
-	SenderID    string         `json:"SenderID"`
-	Recipient   *rediscli.User `json:"Recipient,omitempty"`
-	RecipientID string         `json:"RecipientID"`
-	Message     string         `json:"Message"`
-	CreatedAt   time.Time      `json:"CreatedAt"`
+	UUID          string         `json:"UUID"`
+	Sender        *rediscli.User `json:"Sender,omitempty"`
+	SenderID      string         `json:"SenderID"`
+	Recipient     *rediscli.User `json:"Recipient,omitempty"`
+	RecipientUUID string         `json:"RecipientUUID"`
+	Message       string         `json:"Message"`
+	CreatedAt     time.Time      `json:"CreatedAt"`
 }
 
 func (p Controller) ChannelMessage(sessionUUID string, conn net.Conn, op ws.OpCode, writer Write, message *Message) IError {
 
 	channelMessage := &rediscli.Message{
-		UUID:        uuid.NewString(),
-		SenderID:    message.UserID,
-		RecipientID: message.ChannelMessage.RecipientID,
-		Message:     message.ChannelMessage.Message,
-		CreatedAt:   time.Now(),
+		UUID:          uuid.NewString(),
+		SenderID:      message.UserID,
+		RecipientUUID: message.ChannelMessage.RecipientUUID,
+		Message:       message.ChannelMessage.Message,
+		CreatedAt:     time.Now(),
 	}
 
 	channelUUID, err := p.r.ChannelMessage(channelMessage)
