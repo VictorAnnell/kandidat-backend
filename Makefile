@@ -12,7 +12,7 @@ reset:
 run:
 	go run .
 test:
-	go test -v './...'
+	go test './...'
 lint:
 	golangci-lint run
 fmt:

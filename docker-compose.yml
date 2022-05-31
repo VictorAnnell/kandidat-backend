@@ -46,6 +46,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
       - REDIS_URL=${REDIS_URL:-redis:6379}
+      - GIN_MODE=${GIN_MODE:-release}
 
   redis:
     image: redis
