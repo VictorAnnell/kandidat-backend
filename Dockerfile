@@ -6,7 +6,7 @@ WORKDIR /build
 
 ENV CGO_ENABLED=0
 
-COPY go.* .
+COPY go.* /build/
 
 RUN go mod download
 
