@@ -157,8 +157,8 @@ func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Re
 					}
 				}
 
-				if msg.RecipientUUID != "" {
-					user, err := r.UserGet(msg.RecipientUUID)
+				if msg.RecipientID != "" {
+					user, err := r.UserGet(msg.RecipientID)
 					if err == nil {
 						msg.Recipient = &rediscli.User{
 							ID:   user.ID,

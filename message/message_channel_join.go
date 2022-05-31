@@ -9,19 +9,24 @@ import (
 )
 
 type DataChannelJoin struct {
-	RecipientUUID string              `json:"recipientUUID,omitempty"`
-	Messages      []*rediscli.Message `json:"messages,omitempty"`
-	Users         []*rediscli.User    `json:"users,omitempty"`
+	RecipientID string              `json:"recipientID,omitempty"`
+	CommunityID string              `json:"communityID,omitempty"`
+	Messages    []*rediscli.Message `json:"messages,omitempty"`
+	Users       []*rediscli.User    `json:"users,omitempty"`
 }
 
 func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) (*rediscli.ChannelPubSub, IError) {
 
+	if message.ChannelJoin.CommunityID == "" {
+		message.ChannelJoin.RecipientID = message.ChannelJoin.CommunityID
+	}
+
 	errI := p.ChannelLeave(sessionUUID, write, &Message{
-		SUUID:    message.SUUID,
-		Type:     DataTypeChannelLeave,
+		SUUID:  message.SUUID,
+		Type:   DataTypeChannelLeave,
 		UserID: message.UserID,
 		ChannelLeave: &DataChannelLeave{
-			RecipientUUID: message.ChannelJoin.RecipientUUID,
+			RecipientUUID: message.ChannelJoin.RecipientID,
 		},
 	})
 	if errI != nil {
@@ -34,7 +39,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 		return nil, newError(100, err)
 	}
 
-	channel, channelUUID, err := p.r.ChannelJoin(message.UserID, message.ChannelJoin.RecipientUUID)
+	channel, channelUUID, err := p.r.ChannelJoin(message.UserID, message.ChannelJoin.RecipientID)
 	if err != nil {
 		return nil, newError(101, err)
 	}
@@ -67,9 +72,9 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	err = write(conn, op, &Message{
 		Type: DataTypeChannelJoin,
 		ChannelJoin: &DataChannelJoin{
-			RecipientUUID: message.ChannelJoin.RecipientUUID,
-			Messages:      channelMessages,
-			Users:         channelUsers,
+			RecipientID: message.ChannelJoin.RecipientID,
+			Messages:    channelMessages,
+			Users:       channelUsers,
 		},
 	})
 	if err != nil {
@@ -77,14 +82,14 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	}
 
 	channelSessionsSendMessage("", channelUUID, write, &Message{
-		Type:     DataTypeSys,
-		SUUID:    sessionUUID,
+		Type:   DataTypeSys,
+		SUUID:  sessionUUID,
 		UserID: message.UserID,
-		User:     user,
+		User:   user,
 		Sys: &DataSys{
 			Type: DataTypeChannelJoin,
 			ChannelJoin: &DataChannelJoin{
-				RecipientUUID: message.ChannelJoin.RecipientUUID,
+				RecipientID: message.ChannelJoin.RecipientID,
 			},
 		},
 	})

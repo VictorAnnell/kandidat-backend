@@ -47,11 +47,11 @@ func TestRedis_ChannelJoinPrivate(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			time.Sleep(time.Millisecond * 100)
 			message := &Message{
-				UUID:          uuid.NewString(), //fmt.Sprintf("%s%d", id, i+1),
+				UUID:        uuid.NewString(), //fmt.Sprintf("%s%d", id, i+1),
 				SenderID:    senderUUID,
-				RecipientUUID: recipientUUID,
-				Message:       fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
-				CreatedAt:     time.Now(),
+				RecipientID: recipientUUID,
+				Message:     fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
+				CreatedAt:   time.Now(),
 			}
 			_, err := testRedisInstance.ChannelMessage(message)
 			if err != nil {
@@ -107,11 +107,11 @@ func TestRedis_ChannelJoinPublic(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			time.Sleep(time.Millisecond * 100)
 			message := &Message{
-				UUID:          uuid.NewString(), //fmt.Sprintf("%s%d", id, i+1),
+				UUID:        uuid.NewString(), //fmt.Sprintf("%s%d", id, i+1),
 				SenderID:    senderUUID,
-				RecipientUUID: recipientUUID,
-				Message:       fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
-				CreatedAt:     time.Now(),
+				RecipientID: recipientUUID,
+				Message:     fmt.Sprintf("Helo %s #%d", recipientUUID, i+1),
+				CreatedAt:   time.Now(),
 			}
 			_, err := testRedisInstance.ChannelMessage(message)
 			if err != nil {
