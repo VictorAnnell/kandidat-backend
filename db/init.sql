@@ -40,6 +40,12 @@ CREATE TABLE Pinned_Product (
     PRIMARY KEY(fk_product_id, fk_user_id)
 );
 
+CREATE TABLE Buying_Product (
+    fk_product_id INT REFERENCES Product(product_id) ON DELETE CASCADE NOT NULL,
+    fk_user_id INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    PRIMARY KEY(fk_product_id, fk_user_id)
+);
+
 CREATE TABLE Community (
     community_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL
@@ -77,8 +83,10 @@ INSERT INTO Community (name) VALUES ('Clothes'), ('Politics'), ('Memes');
 /* test pinned_product pinnedproduct_id = 1 */
 INSERT INTO Pinned_Product (fk_product_id, fk_user_id) VALUES (1,1);
 
-/* test user_community pinnedproduct_id = 1 */
 INSERT INTO User_Community(fk_user_id, fk_community_id) VALUES (1,2);
 
 /* test user_followers user_follower_id = 1 */
 INSERT INTO User_Followers(fk_user_id, fk_followed_id) VALUES (2, 1);
+
+/* test buying_product */
+INSERT INTO Buying_Product (fk_product_id, fk_user_id) VALUES (1,2);

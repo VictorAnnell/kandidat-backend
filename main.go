@@ -187,14 +187,17 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/reviews", getUserReviews)
 		users.GET("/:user_id/pinned", getPinnedProducts)
 		users.GET("/:user_id/following/products", getFollowingUsersProducts)
+		users.GET("/:user_id/buying", getBuyingProducts)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
 		users.POST("/:user_id/communities", joinCommunity)
 		users.POST("/:user_id/pinned", addPinnedProduct)
 		users.POST("/:user_id/followers", createFollow)
+		users.POST("/:user_id/buying", addBuyingProduct)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
+		users.DELETE("/:user_id/buying/:product_id", deleteBuyingProduct)
 		users.PUT("/:user_id", updateUser)
 	}
 
