@@ -919,16 +919,11 @@ func getUserChats(c *gin.Context) {
 		return
 	}
 
-	type dbChat struct {
-		UserID1 *int `db:"fk_user_id_1"`
-		UserID2 *int `db:"fk_user_id_2"`
-	}
+	var chatters []*User
 
-	var chatters []*dbChat
-
-	query := `SELECT fk_user_id_2 FROM Chats WHERE fk_user_id_1 = $1
+	query := `SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id_2 FROM Chats WHERE fk_user_id_1=$1)
 						UNION
-						SELECT fk_user_id_1 FROM Chats WHERE fk_user_id_2 = $1`
+						SELECT * FROM Users WHERE user_id IN (SELECT fk_user_id_1 FROM Chats WHERE fk_user_id_2=$1)`
 
 	err := pgxscan.Select(c, dbPool, &chatters, query, user)
 	if err != nil {
@@ -938,20 +933,7 @@ func getUserChats(c *gin.Context) {
 		return
 	}
 
-	// Create a slice of Chat{} for the response
-	var chatresponsearray []*Chat
-
-	for _, dbchat := range chatters {
-		if dbchat.UserID1 != nil {
-			chat := Chat{UserID: *dbchat.UserID1}
-			chatresponsearray = append(chatresponsearray, &chat)
-		} else {
-			chat := Chat{UserID: *dbchat.UserID2}
-			chatresponsearray = append(chatresponsearray, &chat)
-		}
-	}
-
-	c.JSON(http.StatusOK, chatresponsearray)
+	c.JSON(http.StatusOK, chatters)
 }
 
 func deleteChat(c *gin.Context) {

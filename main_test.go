@@ -939,7 +939,8 @@ func TestCreateAndDeleteChat(t *testing.T) {
 	endpoint := "/users/1/chats/2"
 	reqBody := ``
 	expectedHTTPStatusCode := http.StatusNoContent
-	expectedResponseStruct := Chat{}
+	expectedResponseStruct := User{}
+
 	reqTester(t, del, endpoint, reqBody, expectedHTTPStatusCode)
 
 	// Test create same chat
