@@ -564,6 +564,8 @@ func deleteProduct(c *gin.Context) {
 
 		return
 	}
+
+	c.JSON(http.StatusNoContent, gin.H{"deleted": product})
 }
 
 // login logs in the user with the given credentials.

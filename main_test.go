@@ -547,7 +547,7 @@ func TestDeleteProduct(t *testing.T) {
 	}
 
 	// Test with valid product ID
-	endpoint := "/users/1/products/" + strconv.Itoa(testProduct.UserID)
+	endpoint := "/users/1/products/" + strconv.Itoa(testProduct.ProductID)
 	expectedHTTPStatusCode := http.StatusNoContent
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 

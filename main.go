@@ -83,7 +83,7 @@ type Product struct {
 	UploadDate  pgtype.Date `json:"upload_date"`
 	Description string      `json:"description"`
 	Picture     []byte      `json:"picture"`
-    Category    *string     `json:"category"` 
+	Category    *string     `json:"category"`
 	UserID      int         `json:"user_id" db:"fk_user_id"`
 	BuyerID     *int        `json:"buyer_id" db:"fk_buyer_id"`
 }
@@ -207,6 +207,7 @@ func setupRouter() *gin.Engine {
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 		users.DELETE("/:user_id/buying/:product_id", deleteBuyingProduct)
 		users.DELETE("/:user_id/chats/:chat_id", deleteChat)
+		users.DELETE("/:user_id/products/:product_id", deleteProduct)
 		users.PUT("/:user_id", updateUser)
 	}
 
@@ -220,7 +221,6 @@ func setupRouter() *gin.Engine {
 		products.GET("", getProducts)
 		products.GET("/:product_id", getProduct)
 		products.PUT("/:product_id", updateProduct)
-        products.DELETE("/:product_id", deleteProduct)
 	}
 	router.POST("/login", login)
 	router.GET("/ws", func(c *gin.Context) {
