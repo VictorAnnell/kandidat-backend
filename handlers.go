@@ -174,8 +174,8 @@ func createProduct(c *gin.Context) {
 	// Encode picture to base64
 	product.Picture = []byte(base64.StdEncoding.EncodeToString(product.Picture))
 
-	query := "INSERT INTO Product(name,service,price,description,picture,fk_user_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *"
-	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, userID)
+	query := "INSERT INTO Product(name,service,price,description,picture,category,fk_user_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *"
+	err = pgxscan.Get(c, dbPool, &product, query, product.Name, product.Service, product.Price, product.Description, product.Picture, product.Category, userID)
 
 	if err != nil {
 		fmt.Println(err)
@@ -639,8 +639,8 @@ func updateProduct(c *gin.Context) {
 		return
 	}
 
-	query := "UPDATE Product SET name = $2, service = $3, price = $4, description = $5, picture = $6, fk_buyer_id = $7 where product_id = $1 RETURNING *"
-	err := pgxscan.Get(c, dbPool, &product, query, productid, product.Name, product.Service, product.Price, product.Description, product.Picture, product.BuyerID)
+	query := "UPDATE Product SET name = $2, service = $3, price = $4, description = $5, picture = $6, category = $7,fk_buyer_id = $8 where product_id = $1 RETURNING *"
+	err := pgxscan.Get(c, dbPool, &product, query, productid, product.Name, product.Service, product.Price, product.Description, product.Picture, product.Category, product.BuyerID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

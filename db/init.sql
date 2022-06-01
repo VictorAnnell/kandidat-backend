@@ -22,6 +22,7 @@ CREATE TABLE Product (
     upload_date DATE NOT NULL DEFAULT CURRENT_DATE,
     description VARCHAR,
     picture bytea,
+    category VARCHAR,
     fk_user_id INT REFERENCES Users(user_id) NOT NULL,
     fk_buyer_id INT REFERENCES Users(user_id)
 );
