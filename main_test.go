@@ -882,3 +882,104 @@ func TestDeleteBuyingProduct(t *testing.T) {
 	expectedHTTPStatusCode = http.StatusNotFound
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
+
+func TestGetUserChats(t *testing.T) {
+	// Test with valid user ID
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(get, "/users/1/chats", nil)
+	router.ServeHTTP(w, req)
+
+	var chatarray []Chat
+
+	err := json.Unmarshal(w.Body.Bytes(), &chatarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all User structs in the array userarray
+	for _, user := range chatarray {
+		err = validate.Struct(user)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with valid alt user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(get, "/users/2/chats", nil)
+	router.ServeHTTP(w, req)
+
+	err = json.Unmarshal(w.Body.Bytes(), &chatarray)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate all User structs in the array userarray
+	for _, user := range chatarray {
+		err = validate.Struct(user)
+		if err != nil {
+			t.Errorf("Error validating struct: %v", err)
+		}
+	}
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Test with invalid user ID
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(get, "/users/99999/chats", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestCreateAndDeleteChat(t *testing.T) {
+	// Test delete chat
+	endpoint := "/users/1/chats/2"
+	reqBody := ``
+	expectedHTTPStatusCode := http.StatusNoContent
+	expectedResponseStruct := Chat{}
+	reqTester(t, del, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test create same chat
+	endpoint = "/users/2/chats"
+	reqBody = `{"user_id": 1}`
+	expectedHTTPStatusCode = http.StatusCreated
+	bodyBytes := reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test decoding of JSON response body
+	err := json.Unmarshal(bodyBytes, &expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error unmarshalling json: %v", err)
+	}
+
+	// Validate struct
+	err = validate.Struct(expectedResponseStruct)
+	if err != nil {
+		t.Errorf("Error validating struct: %v", err)
+	}
+
+	// Test delete and create again
+	endpoint = "/users/2/chats/1"
+	expectedHTTPStatusCode = http.StatusNoContent
+	reqTester(t, del, endpoint, reqBody, expectedHTTPStatusCode)
+
+	endpoint = "/users/1/chats"
+	reqBody = `{"user_id": 2}`
+	expectedHTTPStatusCode = http.StatusCreated
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid user ID
+	endpoint = "/users/99999/chats"
+	expectedHTTPStatusCode = http.StatusNotFound
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+
+	// Test with invalid product ID
+	endpoint = "/users/2/chats"
+	reqBody = `{"user_id": 99999}`
+	expectedHTTPStatusCode = http.StatusNotFound
+
+	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
+}

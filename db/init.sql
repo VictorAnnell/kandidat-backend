@@ -48,6 +48,12 @@ CREATE TABLE Buying_Product (
     PRIMARY KEY(fk_product_id, fk_user_id)
 );
 
+CREATE TABLE Chats (
+    fk_user_id_1 INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    fk_user_id_2 INT REFERENCES Users(user_id) ON DELETE CASCADE NOT NULL,
+    PRIMARY KEY(fk_user_id_1, fk_user_id_2)
+);
+
 CREATE TABLE Community (
     community_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL
@@ -92,3 +98,6 @@ INSERT INTO User_Followers(fk_user_id, fk_followed_id) VALUES (2, 1);
 
 /* test buying_product */
 INSERT INTO Buying_Product (fk_product_id, fk_user_id) VALUES (1,2);
+
+/* test chats */
+INSERT INTO Chats (fk_user_id_1, fk_user_id_2) VALUES (1,2);

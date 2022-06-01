@@ -857,3 +857,133 @@ func deleteBuyingProduct(c *gin.Context) {
 
 	c.JSON(http.StatusNoContent, gin.H{"deleted": productID})
 }
+
+func createChat(c *gin.Context) {
+	userID := c.Param("user_id")
+
+	var userToChat Chat
+
+	if err := c.BindJSON(&userToChat); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if both users exist
+	if checkIfUserExist(c, userID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User " + userID + " does not exist"})
+		return
+	}
+
+	if checkIfUserExist(c, strconv.Itoa(userToChat.UserID)) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User " + strconv.Itoa(userToChat.UserID) + " does not exist"})
+		return
+	}
+
+	if checkIfChatExist(c, userID, strconv.Itoa(userToChat.UserID)) == true {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You are already chatting with this person"})
+
+		return
+	}
+
+	query := "INSERT INTO Chats(fk_user_id_1, fk_user_id_2) VALUES($1,$2)"
+	_, err := dbPool.Exec(c, query, userID, userToChat.UserID)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+
+	c.JSON(http.StatusCreated, userToChat)
+}
+
+func checkIfChatExist(c *gin.Context, chatter1 string, chatter2 string) bool {
+	query := "SELECT 1 FROM Chats WHERE (fk_user_id_1 = $1 AND fk_user_id_2 = $2) OR (fk_user_id_1 = $2 AND fk_user_id_2 = $1)"
+
+	var result int
+	err := pgxscan.Get(c, dbPool, &result, query, chatter1, chatter2)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func getUserChats(c *gin.Context) {
+	user := c.Param("user_id")
+
+	if checkIfUserExist(c, user) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	type dbChat struct {
+		UserID1 *int `db:"fk_user_id_1"`
+		UserID2 *int `db:"fk_user_id_2"`
+	}
+
+	var chatters []*dbChat
+
+	query := `SELECT fk_user_id_2 FROM Chats WHERE fk_user_id_1 = $1
+						UNION
+						SELECT fk_user_id_1 FROM Chats WHERE fk_user_id_2 = $1`
+
+	err := pgxscan.Select(c, dbPool, &chatters, query, user)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	// Create a slice of Chat{} for the response
+	var chatresponsearray []*Chat
+
+	for _, dbchat := range chatters {
+		if dbchat.UserID1 != nil {
+			chat := Chat{UserID: *dbchat.UserID1}
+			chatresponsearray = append(chatresponsearray, &chat)
+		} else {
+			chat := Chat{UserID: *dbchat.UserID2}
+			chatresponsearray = append(chatresponsearray, &chat)
+		}
+	}
+
+	c.JSON(http.StatusOK, chatresponsearray)
+}
+
+func deleteChat(c *gin.Context) {
+	userID := c.Param("user_id")
+	chatID := c.Param("chat_id")
+
+	// Check if both users exist
+	if checkIfUserExist(c, userID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User " + userID + " does not exist"})
+		return
+	}
+
+	if checkIfUserExist(c, chatID) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User " + chatID + " does not exist"})
+		return
+	}
+
+	if checkIfChatExist(c, userID, chatID) == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You are not chatting with this person"})
+
+		return
+	}
+
+	query := "DELETE FROM Chats WHERE (fk_user_id_1 = $1 AND fk_user_id_2 = $2) OR (fk_user_id_1 = $2 AND fk_user_id_2 = $1)"
+	_, err := dbPool.Exec(c, query, userID, chatID)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"deleted": chatID})
+}

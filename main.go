@@ -88,6 +88,10 @@ type Product struct {
 	BuyerID     *int        `json:"buyer_id" db:"fk_buyer_id"`
 }
 
+type Chat struct {
+	UserID int `json:"user_id" binding:"required"`
+}
+
 // setupConfig reads in .env file and ENV variables if set, otherwise use default values.
 func setupConfig() {
 	// Load environment variables from .env file
@@ -190,6 +194,7 @@ func setupRouter() *gin.Engine {
 		users.GET("/:user_id/pinned", getPinnedProducts)
 		users.GET("/:user_id/following/products", getFollowingUsersProducts)
 		users.GET("/:user_id/buying", getBuyingProducts)
+		users.GET("/:user_id/chats", getUserChats)
 		users.POST("", createUser)
 		users.POST("/:user_id/products", createProduct)
 		users.POST("/:user_id/reviews", createReview)
@@ -197,9 +202,11 @@ func setupRouter() *gin.Engine {
 		users.POST("/:user_id/pinned", addPinnedProduct)
 		users.POST("/:user_id/followers", createFollow)
 		users.POST("/:user_id/buying", addBuyingProduct)
+		users.POST("/:user_id/chats", createChat)
 		users.DELETE("/:user_id", deleteUser)
 		users.DELETE("/:user_id/pinned/:product_id", deletePinnedProduct)
 		users.DELETE("/:user_id/buying/:product_id", deleteBuyingProduct)
+		users.DELETE("/:user_id/chats/:chat_id", deleteChat)
 		users.PUT("/:user_id", updateUser)
 	}
 
