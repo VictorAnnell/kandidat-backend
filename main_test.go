@@ -522,6 +522,42 @@ func TestDeleteUser(t *testing.T) {
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
+func TestDeleteProduct(t *testing.T) {
+	// Create product to delete
+	reqBody := `{"name": "Test Product", "service": false, "price": 100}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(post, "/users/2/products", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		fmt.Println(w.Body.String())
+		fmt.Println(w.Code)
+		t.Error("Failed to create test product to delete")
+
+		return
+	}
+
+	var testProduct Product
+
+	err := json.Unmarshal(w.Body.Bytes(), &testProduct)
+	if err != nil {
+		t.Errorf("Error unmarshalling json of test user to be deleted: %v", err)
+		return
+	}
+
+	// Test with valid product ID
+	endpoint := "/users/1/products/" + strconv.Itoa(testProduct.UserID)
+	expectedHTTPStatusCode := http.StatusNoContent
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+
+	// Test with invalid product ID
+	endpoint = "/users/1/products/99999"
+	expectedHTTPStatusCode = http.StatusNotFound
+
+	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
+}
+
 func TestGetPinnedProducts(t *testing.T) {
 	// Test with valid user ID
 	endpoint := "/users/1/pinned" //nolint:goconst // No const is better for readability

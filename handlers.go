@@ -548,6 +548,24 @@ func deleteUser(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{"deleted": user})
 }
 
+func deleteProduct(c *gin.Context) {
+    product := c.Param("product_id")
+    if checkIfProductExist(c, product) == false {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+        return
+    }
+
+    query := "DELETE FROM Product where product_id = $1"
+    _, err := dbPool.Exec(c, query, product)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+
+		return
+	}
+}
+
 // login logs in the user with the given credentials.
 func login(c *gin.Context) {
 	type LoginUser struct {

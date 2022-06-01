@@ -220,6 +220,7 @@ func setupRouter() *gin.Engine {
 		products.GET("", getProducts)
 		products.GET("/:product_id", getProduct)
 		products.PUT("/:product_id", updateProduct)
+        products.DELETE("/:product_id", deleteProduct)
 	}
 	router.POST("/login", login)
 	router.GET("/ws", func(c *gin.Context) {
