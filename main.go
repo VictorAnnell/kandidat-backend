@@ -180,6 +180,7 @@ func setupRouter() *gin.Engine {
 	router.GET("/ping", ping)
 	users := router.Group("/users")
 	{
+		users.GET("", getUsers)
 		users.GET("/:user_id", getUser)
 		users.GET("/:user_id/communities", getUserCommunities)
 		users.GET("/:user_id/followers", getUserFollowers)

@@ -319,6 +319,22 @@ func getProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
+func getUsers(c *gin.Context) {
+	var users []*User
+
+	query := "SELECT * FROM Users"
+
+	err := pgxscan.Select(c, dbPool, &users, query)
+
+	if err != nil {
+		fmt.Println(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
 // getUserCommunities returns all communities the user is in.
 
 func getUserCommunities(c *gin.Context) {
