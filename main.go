@@ -83,7 +83,7 @@ type Product struct {
 	UploadDate  pgtype.Date `json:"upload_date"`
 	Description string      `json:"description"`
 	Picture     []byte      `json:"picture"`
-    Category    string      `json:"category"` 
+    Category    *string     `json:"category"` 
 	UserID      int         `json:"user_id" db:"fk_user_id"`
 	BuyerID     *int        `json:"buyer_id" db:"fk_buyer_id"`
 }
