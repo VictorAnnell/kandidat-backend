@@ -12,8 +12,8 @@ import (
 
 func TestRedis_ChannelJoinPrivate(t *testing.T) {
 
-	senderUUID := "TEST_SENDER"
-	recipientUUID := "TEST_RECIPIENT"
+	senderUUID := "9999"
+	recipientUUID := "9998"
 
 	chMessageX, _, err := testRedisInstance.ChannelJoin(senderUUID, recipientUUID)
 	if err != nil {

@@ -5,7 +5,7 @@ up:
 down:
 	docker-compose down -v --remove-orphans
 logs:
-	docker-compose --ansi always logs -f --tail 1000
+	docker-compose logs -f --tail 1000
 reset:
 	docker-compose down -v --remove-orphans
 	docker-compose up -d --build
