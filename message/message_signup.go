@@ -29,5 +29,4 @@ func (p Controller) SignUp(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 	}
 
 	return nil
-
 }

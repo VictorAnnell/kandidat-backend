@@ -15,7 +15,6 @@ type DataChannelJoin struct {
 }
 
 func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) (*rediscli.ChannelPubSub, IError) {
-
 	errI := p.ChannelLeave(sessionUUID, write, &Message{
 		SUUID:  message.SUUID,
 		Type:   DataTypeChannelLeave,
@@ -29,6 +28,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	}
 
 	channelSessionsRemove(sessionUUID)
+
 	user, err := p.r.UserGet(message.UserID)
 	if err != nil {
 		return nil, newError(100, err)
@@ -45,6 +45,7 @@ func (p Controller) ChannelJoin(sessionUUID string, conn net.Conn, op ws.OpCode,
 	}
 
 	var offset int64
+
 	var limit int64 = 10
 
 	if messagesLen > limit {

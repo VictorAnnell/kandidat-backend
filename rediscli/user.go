@@ -2,7 +2,7 @@ package rediscli
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/md5" // nolint:gosec // package is not used for security
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,38 +42,42 @@ func (r *Redis) getKeyUsersUUIDListIndex(userUUID string) string {
 }
 
 func (r *Redis) getKeyUsersUsernameListIndex(username string) string {
-	return fmt.Sprintf("%s.%x", keyUsersUsernameListIndex, md5.Sum([]byte(username)))
+	return fmt.Sprintf("%s.%x", keyUsersUsernameListIndex, md5.Sum([]byte(username))) // nolint:gosec // package is not used for security
 }
 
 func (r *Redis) getUserIndexByUsername(username string) (int64, error) {
-
 	log.Println("getUserIndexByUsername", username)
 
 	key := r.getKeyUsersUsernameListIndex(username)
 	value, err := r.client.Get(key).Result()
+
 	if err != nil {
 		return 0, err
 	}
+
 	index, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
+
 	return index, nil
 }
 
 func (r *Redis) getUserIndexByUUID(userUUID string) (int64, error) {
-
 	log.Println("getUserIndexByUUID", userUUID)
 
 	key := r.getKeyUsersUUIDListIndex(userUUID)
 	value, err := r.client.Get(key).Result()
+
 	if err != nil {
 		return 0, fmt.Errorf("getUserIndexByUUID: %w", err)
 	}
+
 	index, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("getUserIndexByUUID: %w", err)
 	}
+
 	return index, nil
 }
 
@@ -90,7 +94,6 @@ func (r *Redis) getKeyUserAccessKey(userUUID string) string {
 }
 
 func (r *Redis) UserAuthorize(username, password string) (*User, error) {
-
 	log.Println("UserAuthorize", fmt.Sprintf("[%s|%s]", username, password))
 
 	user, err := r.UserGet(username)
@@ -120,12 +123,12 @@ func (r *Redis) UserAuthorize(username, password string) (*User, error) {
 	}
 
 	return user, nil
-
 }
 
 func (r *Redis) addUser(user *User) error {
 	buff := bytes.NewBufferString("")
 	enc := json.NewEncoder(buff)
+
 	err := enc.Encode(user)
 	if err != nil {
 		return err
@@ -157,7 +160,6 @@ func (r *Redis) addUser(user *User) error {
 }
 
 func (r *Redis) getUserFromList(userIndex int64) (*User, error) {
-
 	key := r.getKeyUsers()
 
 	value, err := r.client.LIndex(key, userIndex).Result()
@@ -168,6 +170,7 @@ func (r *Redis) getUserFromList(userIndex int64) (*User, error) {
 	user := &User{}
 
 	dec := json.NewDecoder(strings.NewReader(value))
+
 	err = dec.Decode(user)
 	if err != nil {
 		return nil, fmt.Errorf("getUserFromList[%d]: %w", userIndex, err)
@@ -177,7 +180,6 @@ func (r *Redis) getUserFromList(userIndex int64) (*User, error) {
 }
 
 func (r *Redis) getUserFromListByUsername(username string) (*User, error) {
-
 	log.Println("getUserFromListByUsername", username)
 
 	userIndex, err := r.getUserIndexByUsername(username)
@@ -193,11 +195,9 @@ func (r *Redis) getUserFromListByUsername(username string) (*User, error) {
 	user.OnLine = r.UserIsOnline(user.ID)
 
 	return user, nil
-
 }
 
 func (r *Redis) getUserFromListByUUID(userUUID string) (*User, error) {
-
 	log.Println("getUserFromListByUUID", userUUID)
 
 	userIndex, err := r.getUserIndexByUUID(userUUID)
@@ -213,11 +213,9 @@ func (r *Redis) getUserFromListByUUID(userUUID string) (*User, error) {
 	user.OnLine = r.UserIsOnline(user.ID)
 
 	return user, nil
-
 }
 
 func (r *Redis) UserCreate(id, name string) (*User, error) {
-
 	log.Println("UserCreate", fmt.Sprintf("[%s|%s]", id, name))
 
 	if user, err := r.getUserFromListByUsername(name); err == nil {
@@ -234,20 +232,20 @@ func (r *Redis) UserCreate(id, name string) (*User, error) {
 	}
 
 	return user, nil
-
 }
 
 func (r *Redis) UserGet(userUUID string) (*User, error) {
 	log.Println("UserGet", userUUID)
 	user, err := r.getUserFromListByUUID(userUUID)
+
 	if err != nil {
 		return nil, fmt.Errorf("UserGET[%s]: %w", userUUID, err)
 	}
+
 	return user, nil
 }
 
 func (r *Redis) UserAll() ([]*User, error) {
-
 	key := r.getKeyUsers()
 
 	items, err := r.client.LLen(key).Result()
@@ -255,7 +253,7 @@ func (r *Redis) UserAll() ([]*User, error) {
 		return nil, err
 	}
 
-	values, err := r.client.LRange(key, 0, items).Result()
+	values, _ := r.client.LRange(key, 0, items).Result()
 
 	users := make([]*User, 0, items)
 
@@ -263,14 +261,15 @@ func (r *Redis) UserAll() ([]*User, error) {
 		user := &User{}
 		dec := json.NewDecoder(strings.NewReader(values[i]))
 		err = dec.Decode(user)
+
 		if err != nil {
 			return nil, fmt.Errorf("[%s]: %w", values[i], err)
 		}
+
 		users = append(users, user)
 	}
 
 	return users, nil
-
 }
 
 func (r *Redis) UserDeleteAccessKey(userUUID string) {
@@ -286,6 +285,7 @@ func (r *Redis) UserUpdateAccessKey(userUUID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return accessKey, nil
 }
 
@@ -302,9 +302,11 @@ func (r *Redis) UserSetOffline(userUUID string) {
 func (r *Redis) UserIsOnline(userUUID string) bool {
 	key := r.getKeyUserStatus(userUUID)
 	err := r.client.Get(key).Err()
+
 	if err == nil {
 		return true
 	}
+
 	return false
 }
 

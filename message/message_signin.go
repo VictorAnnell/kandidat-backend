@@ -19,7 +19,6 @@ var usersConn = map[string]net.Conn{}
 var usersConnSync = &sync.RWMutex{}
 
 func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, write Write, message *Message) IError {
-
 	log.Println("SignIn", sessionUUID, fmt.Sprintf("%+v", message))
 
 	user, err := p.r.UserAuthorize(message.SignIn.Username, message.SignIn.Password)
@@ -46,6 +45,7 @@ func (p Controller) SignIn(sessionUUID string, conn net.Conn, op ws.OpCode, writ
 
 	usersConnSync.Lock()
 	usersConn[message.UserID] = conn
+
 	for _, conn := range usersConn {
 		err := write(conn, op, p.SysSignIn(user))
 		if err != nil {

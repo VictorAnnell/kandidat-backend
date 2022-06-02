@@ -19,23 +19,10 @@ func newError(errCode uint32, err error) IError {
 }
 
 const (
-	errCodeOK uint32 = iota
-	errCodeJSUnmarshal
-	errCodeWSRead
-	errCodeWSWrite
-	errCodeSignIn
-	errCodeSignUp
+	errCodeSignIn uint32 = iota
 	errCodeSignOut
-	errCodeRedisChannelMessage
-	errCodeRedisChannelUsers
-	errCodeRedisGetSessionUUID
-	errCodeRedisGetUserByUUID
-	errCodeRedisChannelJoin
-	errCodeUserSetOnline
 )
 
 var (
-	errWSRead        = errors.New("could not read websocket connection")
-	errSignIn        = errors.New("could not signIn")
 	errUserSetOnline = errors.New("could not set user status as OnLine")
 )

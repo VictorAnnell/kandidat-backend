@@ -17,7 +17,6 @@ type DataChannelMessages struct {
 }
 
 func (p Controller) ChannelMessages(sessionUUID string, conn net.Conn, op ws.OpCode, writer Write, message *Message) IError {
-
 	if message.ChannelMessages.Limit == 0 {
 		message.ChannelMessages.Limit = 10
 	}

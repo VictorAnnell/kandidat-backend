@@ -17,13 +17,14 @@ import (
 )
 
 func Write(conn io.ReadWriter, op ws.OpCode, message *message.Message) error {
-
 	data, err := json.Marshal(message)
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
+
 	log.Println("write socket message:", string(data))
+
 	err = wsutil.WriteServerMessage(conn, op, data)
 	if err != nil {
 		log.Println(err)
@@ -43,14 +44,16 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 	}
 
 	connectionAdd(conn, userSessionUUID)
+
 	defer func() {
 		conn.Close()
-		err := r.DelConnection(userSessionUUID)
+
+		err = r.DelConnection(userSessionUUID)
 		if err != nil {
 			log.Println(err)
 		}
-		connectionDel(userSessionUUID)
 
+		connectionDel(userSessionUUID)
 	}()
 
 	// err = Write(conn, ws.OpText, c.Ready(userSessionUUID))
@@ -67,17 +70,14 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 		if data, op, err := wsutil.ReadClientData(conn); err != nil {
 			log.Println(err)
 			return
-			//response := makeError(errCodeWSRead, fmt.Errorf("%s: %w", errWSRead, err))
-			//wsWrite(ch, conn, op, response)
 		} else if err = json.Unmarshal(data, msg); err != nil {
 			response := c.Error(errCodeJSUnmarshal, err, userSessionUUID, msg)
-			err = Write(conn, op, response)
+			_ = Write(conn, op, response)
 		} else {
-
 			var receivedErr IError
 
 			log.Println("Received message:", string(data))
-			switch msg.Type {
+			switch msg.Type { //nolint:exhaustive
 			case message.DataTypeSignIn:
 				receivedErr = c.SignIn(userSessionUUID, conn, op, Write, msg)
 			case message.DataTypeSignUp:
@@ -87,8 +87,7 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 			case message.DataTypeUsers:
 				receivedErr = c.Users(userSessionUUID, conn, op, Write)
 			case message.DataTypeChannelJoin:
-				channelPubSub := new(rediscli.ChannelPubSub)
-				channelPubSub, receivedErr = c.ChannelJoin(userSessionUUID, conn, op, Write, msg)
+				channelPubSub, _ := c.ChannelJoin(userSessionUUID, conn, op, Write, msg)
 				if channelPubSub != nil {
 					go chatReceiver(conn, channelPubSub, r, c)
 				}
@@ -109,7 +108,7 @@ func NewConnection(conn net.Conn, r *rediscli.Redis, c *message.Controller, init
 			if receivedErr != nil {
 				log.Println(receivedErr)
 				code, err := receivedErr.Error()
-				err = Write(conn, op, c.Error(code, err, userSessionUUID, string(data)))
+				_ = Write(conn, op, c.Error(code, err, userSessionUUID, string(data)))
 				log.Println(receivedErr)
 			}
 		}
@@ -122,31 +121,35 @@ func Handler(writer http.ResponseWriter, request *http.Request, r *rediscli.Redi
 		log.Println(err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		_, _ = fmt.Fprintf(writer, "%s", err)
+
 		return
 	}
+
 	chInitErr := make(chan error, 1)
 	go NewConnection(conn, r, c, chInitErr)
+
 	if err = <-chInitErr; err != nil {
 		log.Println(err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		_, _ = fmt.Fprintf(writer, "%s", err)
+
 		return
 	}
 }
 
 func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Redis, c *message.Controller) {
-
 	defer channel.Closed()
+
 	for {
 		select {
 		case data := <-channel.Channel():
 			msg := &message.DataChannelMessage{}
 			dec := json.NewDecoder(strings.NewReader(data.Payload))
 			err := dec.Decode(msg)
+
 			if err != nil {
 				log.Println(err)
 			} else {
-
 				if msg.SenderID != "" {
 					user, err := r.UserGet(msg.SenderID)
 					if err == nil {
@@ -180,5 +183,4 @@ func chatReceiver(conn net.Conn, channel *rediscli.ChannelPubSub, r *rediscli.Re
 			return
 		}
 	}
-
 }

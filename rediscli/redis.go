@@ -32,7 +32,6 @@ func (channel *ChannelPubSub) Closed() <-chan struct{} {
 }
 
 func NewRedis(addr, passwd string) *Redis {
-
 	log.Println("Initialized redis client", addr, passwd)
 
 	opt := &redis.Options{
@@ -53,5 +52,6 @@ func NewRedis(addr, passwd string) *Redis {
 		channelsPubSub:     make(map[string]*ChannelPubSub, 0),
 		channelsPubSubSync: &sync.RWMutex{},
 	}
+
 	return r
 }

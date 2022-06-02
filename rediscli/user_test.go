@@ -75,7 +75,6 @@ func TestUserMap(t *testing.T) {
 }*/
 
 func TestUserCreate(t *testing.T) {
-
 	name := "test user"
 	id := "9999"
 
@@ -101,5 +100,4 @@ func TestUserCreate(t *testing.T) {
 	for i := range users {
 		log.Println(fmt.Sprintf("%+v", users[i]))
 	}
-
 }

@@ -20,7 +20,6 @@ type DataChannelMessage struct {
 }
 
 func (p Controller) ChannelMessage(sessionUUID string, conn net.Conn, op ws.OpCode, writer Write, message *Message) IError {
-
 	channelMessage := &rediscli.Message{
 		UUID:          uuid.NewString(),
 		SenderID:      message.UserID,

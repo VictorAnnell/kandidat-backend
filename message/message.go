@@ -79,22 +79,24 @@ func channelSessionsAdd(conn net.Conn, channelUUID, sessionUUID, userUUID string
 	if _, ok := channelSessionsJoins[channelUUID]; !ok {
 		channelSessionsJoins[channelUUID] = make(map[string]Channel, 0)
 	}
+
 	channelSessionsJoins[channelUUID][sessionUUID] = Channel{conn: conn, userUUID: userUUID}
 	channelSessionsSync.Unlock()
 
 	sessionChannelSync.Lock()
 	sessionChannel[sessionUUID] = channelUUID
 	sessionChannelSync.Unlock()
-
 }
 
 func channelSessionsRemove(sessionUUID string) {
 	sessionChannelSync.RLock()
 	channelUUID := sessionChannel[sessionUUID]
 	sessionChannelSync.RUnlock()
+
 	if channelUUID == "" {
 		return
 	}
+
 	channelSessionsSync.Lock()
 	if _, ok := channelSessionsJoins[channelUUID]; ok {
 		delete(channelSessionsJoins[channelUUID], sessionUUID)
@@ -105,18 +107,19 @@ func channelSessionsRemove(sessionUUID string) {
 type Write func(conn io.ReadWriter, op ws.OpCode, message *Message) error
 
 func channelSessionsSendMessage(skipUserUUID, channelUUID string, write Write, message *Message) {
-
 	channelSessionsSync.RLock()
 	defer channelSessionsSync.RUnlock()
+
 	for _, data := range channelSessionsJoins[channelUUID] {
 		if skipUserUUID != "" && skipUserUUID == data.userUUID {
 			log.Println(">>>>>>>>>>>>SKIP", skipUserUUID, fmt.Sprintf("%+v", message))
 			continue
 		}
+
 		log.Println(">>>>>>>>>>>>SEND", skipUserUUID, fmt.Sprintf("%+v", message))
+
 		if err := write(data.conn, ws.OpText, message); err != nil {
 			log.Println(err)
 		}
 	}
-
 }

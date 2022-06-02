@@ -42,6 +42,7 @@ func (r *Redis) getKeyChannelSenderRecipient(senderUUID, recipientUUID string) s
 	if recipientUUID == "" {
 		recipientUUID = "public"
 	}
+
 	return fmt.Sprintf("%s.%s.%s", keyChannelSenderRecipient, senderUUID, recipientUUID)
 }
 
@@ -49,33 +50,42 @@ func (r *Redis) GetChannelUUID(senderUUID, recipientUUID string) (string, error)
 	if senderUUID == "" {
 		return "", errors.New("empty sender UUID")
 	}
+
 	if recipientUUID == "" {
 		return "public", nil
 	}
+
 	if _, err := strconv.ParseInt(recipientUUID, 10, 64); err != nil {
 		return recipientUUID, nil
 	}
+
 	keySenderRecipient := r.getKeyChannelSenderRecipient(senderUUID, recipientUUID)
 	channelUUID, err := r.client.Get(keySenderRecipient).Result()
+
 	if err == redis.Nil {
 		keyRecipientSender := r.getKeyChannelSenderRecipient(recipientUUID, senderUUID)
 		channelUUID, err = r.client.Get(keyRecipientSender).Result()
+
 		if err == redis.Nil {
 			channelUUID = uuid.NewString()
-			if err := r.client.Set(keySenderRecipient, channelUUID, 0).Err(); err != nil {
+			if err = r.client.Set(keySenderRecipient, channelUUID, 0).Err(); err != nil {
 				return "", err
 			}
-			if err := r.client.Set(keyRecipientSender, channelUUID, 0).Err(); err != nil {
+
+			if err = r.client.Set(keyRecipientSender, channelUUID, 0).Err(); err != nil {
 				return "", err
 			}
+
 			return channelUUID, nil
 		} else if err != nil {
 			return "", err
 		}
+
 		return channelUUID, nil
 	} else if err != nil {
 		return "", err
 	}
+
 	return channelUUID, nil
 }
 
@@ -84,11 +94,13 @@ func (r *Redis) channelJoin(channelUUID, senderUUID, recipientUUID string) error
 	if err := r.client.HSet(key, senderUUID, time.Now().String()).Err(); err != nil {
 		return err
 	}
+
 	if recipientUUID != "" {
 		if err := r.client.HSet(key, recipientUUID, time.Now().String()).Err(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -98,11 +110,13 @@ func (r *Redis) addChannelPubSub(channelUUID string, pubSub *redis.PubSub) *Chan
 		closed: make(chan struct{}, 1),
 		pubSub: pubSub,
 	}
+
 	r.channelsPubSubSync.Lock()
 	if _, ok := r.channelsPubSub[channelUUID]; !ok {
 		r.channelsPubSub[channelUUID] = channelPubSub
 	}
 	r.channelsPubSubSync.Unlock()
+
 	return channelPubSub
 }
 
@@ -110,14 +124,15 @@ func (r *Redis) getChannelPubSub(channelUUID string) *ChannelPubSub {
 	r.channelsPubSubSync.RLock()
 	pubSub, ok := r.channelsPubSub[channelUUID]
 	r.channelsPubSubSync.RUnlock()
+
 	if !ok {
 		return nil
 	}
+
 	return pubSub
 }
 
 func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, string, error) {
-
 	channelUUID, err := r.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		return nil, "", err
@@ -127,8 +142,10 @@ func (r *Redis) ChannelJoin(senderUUID, recipientUUID string) (*ChannelPubSub, s
 	if err != nil {
 		return nil, "", err
 	}
+
 	pubSub := r.client.Subscribe(channelUUID)
 	channel := r.addChannelPubSub(channelUUID, pubSub)
+
 	return channel, channelUUID, nil
 }
 
@@ -141,6 +158,7 @@ func (r *Redis) ChannelMessage(message *Message) (string, error) {
 	buff := bytes.NewBufferString("")
 	enc := json.NewEncoder(buff)
 	err = enc.Encode(message)
+
 	if err != nil {
 		return "", err
 	}
@@ -149,16 +167,18 @@ func (r *Redis) ChannelMessage(message *Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	key := r.getKeyChannelMessages(channelUUID)
 	err = r.client.RPush(key, buff.String()).Err()
+
 	if err != nil {
 		return "", err
 	}
+
 	return channelUUID, nil
 }
 
 func (r *Redis) ChannelLeave(senderUUID, recipientUUID string) (string, error) {
-
 	channelUUID, err := r.GetChannelUUID(senderUUID, recipientUUID)
 	if err != nil {
 		return "", err
@@ -187,7 +207,6 @@ func (r *Redis) ChannelLeave(senderUUID, recipientUUID string) (string, error) {
 	case <-timeout.C:
 		return "", errors.New("channel closed with timeout")
 	}
-
 }
 
 func (r *Redis) ChannelMessagesCount(channelUUID string) (int64, error) {
@@ -196,7 +215,6 @@ func (r *Redis) ChannelMessagesCount(channelUUID string) (int64, error) {
 }
 
 func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Message, error) {
-
 	key := r.getKeyChannelMessages(channelUUID)
 
 	log.Println("ChannelMessages", key, offset, limit)
@@ -207,13 +225,16 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 	}
 
 	messages := make([]*Message, 0, len(values))
+
 	for i := range values {
 		message := &Message{}
 		dec := json.NewDecoder(strings.NewReader(values[i]))
 		err := dec.Decode(message)
+
 		if err != nil {
 			return nil, err
 		}
+
 		if message.SenderID != "" {
 			user, err := r.getUserFromListByUUID(message.SenderID)
 			if err == nil {
@@ -223,6 +244,7 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 				}
 			}
 		}
+
 		if message.RecipientUUID != "" {
 			user, err := r.getUserFromListByUUID(message.RecipientUUID)
 			if err == nil {
@@ -232,15 +254,14 @@ func (r *Redis) ChannelMessages(channelUUID string, offset, limit int64) ([]*Mes
 				}
 			}
 		}
+
 		messages = append(messages, message)
 	}
 
 	return messages, nil
-
 }
 
 func (r *Redis) ChannelUsers(channelUUID string) ([]*User, error) {
-
 	key := r.getKeyChannelUsers(channelUUID)
 
 	values, err := r.client.HGetAll(key).Result()
@@ -256,11 +277,11 @@ func (r *Redis) ChannelUsers(channelUUID string) ([]*User, error) {
 			log.Println(err)
 			continue
 		}
+
 		users = append(users, user)
 	}
 
 	return users, nil
-
 }
 
 /*

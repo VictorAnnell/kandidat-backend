@@ -329,6 +329,7 @@ func getUsers(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -549,14 +550,14 @@ func deleteUser(c *gin.Context) {
 }
 
 func deleteProduct(c *gin.Context) {
-    product := c.Param("product_id")
-    if checkIfProductExist(c, product) == false {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
-        return
-    }
+	product := c.Param("product_id")
+	if checkIfProductExist(c, product) == false {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+		return
+	}
 
-    query := "DELETE FROM Product where product_id = $1"
-    _, err := dbPool.Exec(c, query, product)
+	query := "DELETE FROM Product where product_id = $1"
+	_, err := dbPool.Exec(c, query, product)
 
 	if err != nil {
 		fmt.Println(err)

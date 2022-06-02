@@ -486,7 +486,7 @@ func TestJoinCommunity(t *testing.T) {
 	reqTester(t, post, endpoint, reqBody, expectedHTTPStatusCode)
 }
 
-func TestDeleteUser(t *testing.T) {
+func TestDeleteUser(t *testing.T) { //nolint:dupl // Testing different endpoints
 	// Create user to delete
 	reqBody := `{"name": "Test User", "phone_number": "+12999999999", "password": "a nice password", "business": true}`
 	w := httptest.NewRecorder()
@@ -522,7 +522,7 @@ func TestDeleteUser(t *testing.T) {
 	reqTester(t, del, endpoint, "", expectedHTTPStatusCode)
 }
 
-func TestDeleteProduct(t *testing.T) {
+func TestDeleteProduct(t *testing.T) { //nolint:dupl // Testing different endpoints
 	// Create product to delete
 	reqBody := `{"name": "Test Product", "service": false, "price": 100}`
 	w := httptest.NewRecorder()
