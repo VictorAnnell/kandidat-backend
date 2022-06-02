@@ -26,7 +26,6 @@
       ansible.builtin.git:
         repo: https://github.com/VictorAnnell/kandidat-backend
         dest: /srv/kandidat-backend
-        version: redischat
 
     - name: Create .env file
       copy:
