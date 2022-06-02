@@ -37,12 +37,23 @@ services:
     depends_on: 
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-backend-db}
       - POSTGRES_USER=${POSTGRES_USER:-dbuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kandidat-backend}
+      - REDIS_URL=${REDIS_URL:-redis:6379}
+      - GIN_MODE=${GIN_MODE:-release}
+
+  redis:
+    image: redis
+    container_name: kandidat-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
 
 volumes:
   postgres-data:

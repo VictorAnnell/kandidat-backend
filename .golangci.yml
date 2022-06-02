@@ -4,7 +4,7 @@ linters-settings:
   govet:
     check-shadowing: true
   nolintlint:
-    require-explanation: true
+    require-explanation: false
     require-specific: true
 
 linters:
@@ -21,7 +21,6 @@ linters:
     - gocritic
     - gofmt
     - goimports
-    - gomnd
     - gocyclo
     - gosec
     - govet
